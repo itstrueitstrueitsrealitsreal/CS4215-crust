@@ -29,7 +29,7 @@ jobs:
       - name: Clear Yarn cache
         run: yarn cache clean
 
-      - name: Install dependencies with frozen lockfile
+      - name: Install dependencies
         run: yarn install --immutable
 
       - name: yarn build
