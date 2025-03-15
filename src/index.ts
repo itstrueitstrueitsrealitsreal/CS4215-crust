@@ -1,4 +1,4 @@
 import { initialise } from "conductor/dist/conductor/runner/util/";
-import { SimpleLangEvaluator } from "./SimpleLangEvaluator";
+import { CrustEvaluator } from "./CrustEvaluator";
 
-const {runnerPlugin, conduit} = initialise(SimpleLangEvaluator);
+const { runnerPlugin, conduit } = initialise(CrustEvaluator);
