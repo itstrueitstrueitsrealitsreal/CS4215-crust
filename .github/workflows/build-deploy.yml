@@ -23,8 +23,14 @@ jobs:
           node-version: 22
           cache: yarn
 
-      - name: yarn install
-        run: yarn install --immutable
+      - name: Check Yarn version
+        run: yarn --version
+
+      - name: Clear Yarn cache
+        run: yarn cache clean
+
+      - name: Install dependencies with frozen lockfile
+        run: yarn install --frozen-lockfile
 
       - name: yarn build
         run: yarn build
