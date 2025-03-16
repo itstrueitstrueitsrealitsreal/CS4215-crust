@@ -1,67 +1,91 @@
 grammar Crust;
 
-prog: stmt* EOF;
+// The entry point for a Crust program
+program: statement* EOF;
 
-stmt:
-	varDecl
-	| exprStmt
-	| ifStmt
-	| whileStmt
-	| funcDecl
-	| returnStmt
-	| block;
+// Statements: variable declarations, function declarations, blocks, if/else, while loops, return
+// statements, and expression statements.
+statement:
+	variableDeclaration
+	| functionDeclaration
+	| block
+	| ifStatement
+	| whileStatement
+	| returnStatement
+	| expressionStatement;
 
-varDecl: 'let' 'mut'? ID (':' type)? ('=' expr)? ';';
-exprStmt: expr ';';
-ifStmt: 'if' expr block ('else' (ifStmt | block))?;
-whileStmt: 'while' expr block;
-funcDecl: 'fn' ID '(' paramList? ')' ('->' type)? block;
-returnStmt: 'return' expr? ';';
-paramList: param (',' param)*;
-param: ID ':' type;
-block: '{' stmt* '}';
+// Variable declaration supports an optional 'mut' for mutability and an optional initializer.
+variableDeclaration:
+	'let' ('mut')? Identifier ('=' expression)? ';';
 
-expr: assignment;
+// Function declaration with a parameter list (parameters may have types) and a block body.
+functionDeclaration:
+	'fn' Identifier '(' parameterList? ')' block;
 
-assignment: ID ('=' assignment)? | logical;
+// A comma-separated list of parameters.
+parameterList: parameter (',' parameter)*;
 
-logical: comparison (('&&' | '||') comparison)*;
+// Each parameter is an identifier, optionally annotated with a type.
+parameter: Identifier (':' type)?;
 
-comparison:
-	term (('==' | '!=' | '<' | '<=' | '>' | '>=') term)*;
+// A block is a sequence of statements enclosed in braces.
+block: '{' statement* '}';
 
-term: factor (('+' | '-') factor)*;
+// An if statement with an optional else branch.
+ifStatement: 'if' '(' expression ')' block ('else' block)?;
 
-factor: unary (('*' | '/') unary)*;
+// A while loop with a condition and block body.
+whileStatement: 'while' '(' expression ')' block;
 
-unary: ('!' | '-' | '&' 'mut'?) unary | primary;
+// A return statement may optionally return an expression.
+returnStatement: 'return' expression? ';';
 
-primary:
-	INT
-	| FLOAT
-	| BOOL
-	| STRING
-	| ID
-	| functionCall
-	| '(' expr ')';
+// An expression statement ends with a semicolon.
+expressionStatement: expression ';';
 
-functionCall: ID '(' arguments? ')';
-arguments: expr (',' expr)*;
+// --- Expressions ---
+// 
+// The grammar below implements a simple expression language with assignment, logical operators,
+// equality and relational operators, arithmetic, and unary operations. (Borrowing using '&' is
+// handled as a unary operator.)
 
-type:
-	'i32'
-	| 'f64'
-	| 'bool'
-	| 'String'
-	| '&' 'mut'? type
-	| '()'; // Unit type
+expression: assignment;
 
-// Lexer Rules
-ID: [a-zA-Z_][a-zA-Z_0-9]*;
-INT: [0-9]+;
-FLOAT: [0-9]+ '.' [0-9]+;
-BOOL: 'true' | 'false';
-STRING: '"' (~["\r\n] | '\\"')* '"';
-COMMENT: '//' ~[\r\n]* -> skip;
-BLOCK_COMMENT: '/*' .*? '*/' -> skip;
+// Assignment: right-associative.
+assignment: logicalOr ( '=' assignment)?;
+
+// Logical OR.
+logicalOr: logicalAnd ( '||' logicalAnd)*;
+
+// Logical AND.
+logicalAnd: equality ( '&&' equality)*;
+
+// Equality operators.
+equality: relational ( ( '==' | '!=') relational)*;
+
+// Relational operators.
+relational: additive ( ( '<' | '>' | '<=' | '>=') additive)*;
+
+// Additive: addition and subtraction.
+additive: multiplicative ( ( '+' | '-') multiplicative)*;
+
+// Multiplicative: multiplication, division, and modulo.
+multiplicative: unary ( ( '*' | '/' | '%') unary)*;
+
+// Unary operations: negation, logical NOT, and address-of (borrow).
+unary: ( '!' | '-' | '&')? primary;
+
+// Primary expressions: integer literals, identifiers, or parenthesized expressions.
+primary: Integer | Identifier | '(' expression ')';
+
+// A simple type is just an identifier.
+type: Identifier;
+
+// --- Lexer rules ---
+
+Identifier: [a-zA-Z_][a-zA-Z_0-9]*;
+
+Integer: [0-9]+;
+
+// Skip whitespace.
 WS: [ \t\r\n]+ -> skip;

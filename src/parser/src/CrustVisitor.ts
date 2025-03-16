@@ -3,27 +3,27 @@
 import { AbstractParseTreeVisitor } from "antlr4ng";
 
 
-import { ProgContext } from "./CrustParser.js";
-import { StmtContext } from "./CrustParser.js";
-import { VarDeclContext } from "./CrustParser.js";
-import { ExprStmtContext } from "./CrustParser.js";
-import { IfStmtContext } from "./CrustParser.js";
-import { WhileStmtContext } from "./CrustParser.js";
-import { FuncDeclContext } from "./CrustParser.js";
-import { ReturnStmtContext } from "./CrustParser.js";
-import { ParamListContext } from "./CrustParser.js";
-import { ParamContext } from "./CrustParser.js";
+import { ProgramContext } from "./CrustParser.js";
+import { StatementContext } from "./CrustParser.js";
+import { VariableDeclarationContext } from "./CrustParser.js";
+import { FunctionDeclarationContext } from "./CrustParser.js";
+import { ParameterListContext } from "./CrustParser.js";
+import { ParameterContext } from "./CrustParser.js";
 import { BlockContext } from "./CrustParser.js";
-import { ExprContext } from "./CrustParser.js";
+import { IfStatementContext } from "./CrustParser.js";
+import { WhileStatementContext } from "./CrustParser.js";
+import { ReturnStatementContext } from "./CrustParser.js";
+import { ExpressionStatementContext } from "./CrustParser.js";
+import { ExpressionContext } from "./CrustParser.js";
 import { AssignmentContext } from "./CrustParser.js";
-import { LogicalContext } from "./CrustParser.js";
-import { ComparisonContext } from "./CrustParser.js";
-import { TermContext } from "./CrustParser.js";
-import { FactorContext } from "./CrustParser.js";
+import { LogicalOrContext } from "./CrustParser.js";
+import { LogicalAndContext } from "./CrustParser.js";
+import { EqualityContext } from "./CrustParser.js";
+import { RelationalContext } from "./CrustParser.js";
+import { AdditiveContext } from "./CrustParser.js";
+import { MultiplicativeContext } from "./CrustParser.js";
 import { UnaryContext } from "./CrustParser.js";
 import { PrimaryContext } from "./CrustParser.js";
-import { FunctionCallContext } from "./CrustParser.js";
-import { ArgumentsContext } from "./CrustParser.js";
 import { TypeContext } from "./CrustParser.js";
 
 
@@ -36,65 +36,41 @@ import { TypeContext } from "./CrustParser.js";
  */
 export class CrustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
     /**
-     * Visit a parse tree produced by `CrustParser.prog`.
+     * Visit a parse tree produced by `CrustParser.program`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitProg?: (ctx: ProgContext) => Result;
+    visitProgram?: (ctx: ProgramContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.stmt`.
+     * Visit a parse tree produced by `CrustParser.statement`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitStmt?: (ctx: StmtContext) => Result;
+    visitStatement?: (ctx: StatementContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.varDecl`.
+     * Visit a parse tree produced by `CrustParser.variableDeclaration`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitVarDecl?: (ctx: VarDeclContext) => Result;
+    visitVariableDeclaration?: (ctx: VariableDeclarationContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.exprStmt`.
+     * Visit a parse tree produced by `CrustParser.functionDeclaration`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitExprStmt?: (ctx: ExprStmtContext) => Result;
+    visitFunctionDeclaration?: (ctx: FunctionDeclarationContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.ifStmt`.
+     * Visit a parse tree produced by `CrustParser.parameterList`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitIfStmt?: (ctx: IfStmtContext) => Result;
+    visitParameterList?: (ctx: ParameterListContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.whileStmt`.
+     * Visit a parse tree produced by `CrustParser.parameter`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitWhileStmt?: (ctx: WhileStmtContext) => Result;
-    /**
-     * Visit a parse tree produced by `CrustParser.funcDecl`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitFuncDecl?: (ctx: FuncDeclContext) => Result;
-    /**
-     * Visit a parse tree produced by `CrustParser.returnStmt`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitReturnStmt?: (ctx: ReturnStmtContext) => Result;
-    /**
-     * Visit a parse tree produced by `CrustParser.paramList`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitParamList?: (ctx: ParamListContext) => Result;
-    /**
-     * Visit a parse tree produced by `CrustParser.param`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitParam?: (ctx: ParamContext) => Result;
+    visitParameter?: (ctx: ParameterContext) => Result;
     /**
      * Visit a parse tree produced by `CrustParser.block`.
      * @param ctx the parse tree
@@ -102,11 +78,35 @@ export class CrustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitBlock?: (ctx: BlockContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.expr`.
+     * Visit a parse tree produced by `CrustParser.ifStatement`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitExpr?: (ctx: ExprContext) => Result;
+    visitIfStatement?: (ctx: IfStatementContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.whileStatement`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitWhileStatement?: (ctx: WhileStatementContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.returnStatement`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitReturnStatement?: (ctx: ReturnStatementContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.expressionStatement`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitExpressionStatement?: (ctx: ExpressionStatementContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitExpression?: (ctx: ExpressionContext) => Result;
     /**
      * Visit a parse tree produced by `CrustParser.assignment`.
      * @param ctx the parse tree
@@ -114,29 +114,41 @@ export class CrustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitAssignment?: (ctx: AssignmentContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.logical`.
+     * Visit a parse tree produced by `CrustParser.logicalOr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitLogical?: (ctx: LogicalContext) => Result;
+    visitLogicalOr?: (ctx: LogicalOrContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.comparison`.
+     * Visit a parse tree produced by `CrustParser.logicalAnd`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitComparison?: (ctx: ComparisonContext) => Result;
+    visitLogicalAnd?: (ctx: LogicalAndContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.term`.
+     * Visit a parse tree produced by `CrustParser.equality`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitTerm?: (ctx: TermContext) => Result;
+    visitEquality?: (ctx: EqualityContext) => Result;
     /**
-     * Visit a parse tree produced by `CrustParser.factor`.
+     * Visit a parse tree produced by `CrustParser.relational`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitFactor?: (ctx: FactorContext) => Result;
+    visitRelational?: (ctx: RelationalContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.additive`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAdditive?: (ctx: AdditiveContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.multiplicative`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitMultiplicative?: (ctx: MultiplicativeContext) => Result;
     /**
      * Visit a parse tree produced by `CrustParser.unary`.
      * @param ctx the parse tree
@@ -149,18 +161,6 @@ export class CrustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitPrimary?: (ctx: PrimaryContext) => Result;
-    /**
-     * Visit a parse tree produced by `CrustParser.functionCall`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitFunctionCall?: (ctx: FunctionCallContext) => Result;
-    /**
-     * Visit a parse tree produced by `CrustParser.arguments`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitArguments?: (ctx: ArgumentsContext) => Result;
     /**
      * Visit a parse tree produced by `CrustParser.type`.
      * @param ctx the parse tree

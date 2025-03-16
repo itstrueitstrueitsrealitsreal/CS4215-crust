@@ -3,27 +3,27 @@
 import { ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode } from "antlr4ng";
 
 
-import { ProgContext } from "./CrustParser.js";
-import { StmtContext } from "./CrustParser.js";
-import { VarDeclContext } from "./CrustParser.js";
-import { ExprStmtContext } from "./CrustParser.js";
-import { IfStmtContext } from "./CrustParser.js";
-import { WhileStmtContext } from "./CrustParser.js";
-import { FuncDeclContext } from "./CrustParser.js";
-import { ReturnStmtContext } from "./CrustParser.js";
-import { ParamListContext } from "./CrustParser.js";
-import { ParamContext } from "./CrustParser.js";
+import { ProgramContext } from "./CrustParser.js";
+import { StatementContext } from "./CrustParser.js";
+import { VariableDeclarationContext } from "./CrustParser.js";
+import { FunctionDeclarationContext } from "./CrustParser.js";
+import { ParameterListContext } from "./CrustParser.js";
+import { ParameterContext } from "./CrustParser.js";
 import { BlockContext } from "./CrustParser.js";
-import { ExprContext } from "./CrustParser.js";
+import { IfStatementContext } from "./CrustParser.js";
+import { WhileStatementContext } from "./CrustParser.js";
+import { ReturnStatementContext } from "./CrustParser.js";
+import { ExpressionStatementContext } from "./CrustParser.js";
+import { ExpressionContext } from "./CrustParser.js";
 import { AssignmentContext } from "./CrustParser.js";
-import { LogicalContext } from "./CrustParser.js";
-import { ComparisonContext } from "./CrustParser.js";
-import { TermContext } from "./CrustParser.js";
-import { FactorContext } from "./CrustParser.js";
+import { LogicalOrContext } from "./CrustParser.js";
+import { LogicalAndContext } from "./CrustParser.js";
+import { EqualityContext } from "./CrustParser.js";
+import { RelationalContext } from "./CrustParser.js";
+import { AdditiveContext } from "./CrustParser.js";
+import { MultiplicativeContext } from "./CrustParser.js";
 import { UnaryContext } from "./CrustParser.js";
 import { PrimaryContext } from "./CrustParser.js";
-import { FunctionCallContext } from "./CrustParser.js";
-import { ArgumentsContext } from "./CrustParser.js";
 import { TypeContext } from "./CrustParser.js";
 
 
@@ -33,105 +33,65 @@ import { TypeContext } from "./CrustParser.js";
  */
 export class CrustListener implements ParseTreeListener {
     /**
-     * Enter a parse tree produced by `CrustParser.prog`.
+     * Enter a parse tree produced by `CrustParser.program`.
      * @param ctx the parse tree
      */
-    enterProg?: (ctx: ProgContext) => void;
+    enterProgram?: (ctx: ProgramContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.prog`.
+     * Exit a parse tree produced by `CrustParser.program`.
      * @param ctx the parse tree
      */
-    exitProg?: (ctx: ProgContext) => void;
+    exitProgram?: (ctx: ProgramContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.stmt`.
+     * Enter a parse tree produced by `CrustParser.statement`.
      * @param ctx the parse tree
      */
-    enterStmt?: (ctx: StmtContext) => void;
+    enterStatement?: (ctx: StatementContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.stmt`.
+     * Exit a parse tree produced by `CrustParser.statement`.
      * @param ctx the parse tree
      */
-    exitStmt?: (ctx: StmtContext) => void;
+    exitStatement?: (ctx: StatementContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.varDecl`.
+     * Enter a parse tree produced by `CrustParser.variableDeclaration`.
      * @param ctx the parse tree
      */
-    enterVarDecl?: (ctx: VarDeclContext) => void;
+    enterVariableDeclaration?: (ctx: VariableDeclarationContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.varDecl`.
+     * Exit a parse tree produced by `CrustParser.variableDeclaration`.
      * @param ctx the parse tree
      */
-    exitVarDecl?: (ctx: VarDeclContext) => void;
+    exitVariableDeclaration?: (ctx: VariableDeclarationContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.exprStmt`.
+     * Enter a parse tree produced by `CrustParser.functionDeclaration`.
      * @param ctx the parse tree
      */
-    enterExprStmt?: (ctx: ExprStmtContext) => void;
+    enterFunctionDeclaration?: (ctx: FunctionDeclarationContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.exprStmt`.
+     * Exit a parse tree produced by `CrustParser.functionDeclaration`.
      * @param ctx the parse tree
      */
-    exitExprStmt?: (ctx: ExprStmtContext) => void;
+    exitFunctionDeclaration?: (ctx: FunctionDeclarationContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.ifStmt`.
+     * Enter a parse tree produced by `CrustParser.parameterList`.
      * @param ctx the parse tree
      */
-    enterIfStmt?: (ctx: IfStmtContext) => void;
+    enterParameterList?: (ctx: ParameterListContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.ifStmt`.
+     * Exit a parse tree produced by `CrustParser.parameterList`.
      * @param ctx the parse tree
      */
-    exitIfStmt?: (ctx: IfStmtContext) => void;
+    exitParameterList?: (ctx: ParameterListContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.whileStmt`.
+     * Enter a parse tree produced by `CrustParser.parameter`.
      * @param ctx the parse tree
      */
-    enterWhileStmt?: (ctx: WhileStmtContext) => void;
+    enterParameter?: (ctx: ParameterContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.whileStmt`.
+     * Exit a parse tree produced by `CrustParser.parameter`.
      * @param ctx the parse tree
      */
-    exitWhileStmt?: (ctx: WhileStmtContext) => void;
-    /**
-     * Enter a parse tree produced by `CrustParser.funcDecl`.
-     * @param ctx the parse tree
-     */
-    enterFuncDecl?: (ctx: FuncDeclContext) => void;
-    /**
-     * Exit a parse tree produced by `CrustParser.funcDecl`.
-     * @param ctx the parse tree
-     */
-    exitFuncDecl?: (ctx: FuncDeclContext) => void;
-    /**
-     * Enter a parse tree produced by `CrustParser.returnStmt`.
-     * @param ctx the parse tree
-     */
-    enterReturnStmt?: (ctx: ReturnStmtContext) => void;
-    /**
-     * Exit a parse tree produced by `CrustParser.returnStmt`.
-     * @param ctx the parse tree
-     */
-    exitReturnStmt?: (ctx: ReturnStmtContext) => void;
-    /**
-     * Enter a parse tree produced by `CrustParser.paramList`.
-     * @param ctx the parse tree
-     */
-    enterParamList?: (ctx: ParamListContext) => void;
-    /**
-     * Exit a parse tree produced by `CrustParser.paramList`.
-     * @param ctx the parse tree
-     */
-    exitParamList?: (ctx: ParamListContext) => void;
-    /**
-     * Enter a parse tree produced by `CrustParser.param`.
-     * @param ctx the parse tree
-     */
-    enterParam?: (ctx: ParamContext) => void;
-    /**
-     * Exit a parse tree produced by `CrustParser.param`.
-     * @param ctx the parse tree
-     */
-    exitParam?: (ctx: ParamContext) => void;
+    exitParameter?: (ctx: ParameterContext) => void;
     /**
      * Enter a parse tree produced by `CrustParser.block`.
      * @param ctx the parse tree
@@ -143,15 +103,55 @@ export class CrustListener implements ParseTreeListener {
      */
     exitBlock?: (ctx: BlockContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.expr`.
+     * Enter a parse tree produced by `CrustParser.ifStatement`.
      * @param ctx the parse tree
      */
-    enterExpr?: (ctx: ExprContext) => void;
+    enterIfStatement?: (ctx: IfStatementContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.expr`.
+     * Exit a parse tree produced by `CrustParser.ifStatement`.
      * @param ctx the parse tree
      */
-    exitExpr?: (ctx: ExprContext) => void;
+    exitIfStatement?: (ctx: IfStatementContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.whileStatement`.
+     * @param ctx the parse tree
+     */
+    enterWhileStatement?: (ctx: WhileStatementContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.whileStatement`.
+     * @param ctx the parse tree
+     */
+    exitWhileStatement?: (ctx: WhileStatementContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.returnStatement`.
+     * @param ctx the parse tree
+     */
+    enterReturnStatement?: (ctx: ReturnStatementContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.returnStatement`.
+     * @param ctx the parse tree
+     */
+    exitReturnStatement?: (ctx: ReturnStatementContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.expressionStatement`.
+     * @param ctx the parse tree
+     */
+    enterExpressionStatement?: (ctx: ExpressionStatementContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.expressionStatement`.
+     * @param ctx the parse tree
+     */
+    exitExpressionStatement?: (ctx: ExpressionStatementContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterExpression?: (ctx: ExpressionContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitExpression?: (ctx: ExpressionContext) => void;
     /**
      * Enter a parse tree produced by `CrustParser.assignment`.
      * @param ctx the parse tree
@@ -163,45 +163,65 @@ export class CrustListener implements ParseTreeListener {
      */
     exitAssignment?: (ctx: AssignmentContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.logical`.
+     * Enter a parse tree produced by `CrustParser.logicalOr`.
      * @param ctx the parse tree
      */
-    enterLogical?: (ctx: LogicalContext) => void;
+    enterLogicalOr?: (ctx: LogicalOrContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.logical`.
+     * Exit a parse tree produced by `CrustParser.logicalOr`.
      * @param ctx the parse tree
      */
-    exitLogical?: (ctx: LogicalContext) => void;
+    exitLogicalOr?: (ctx: LogicalOrContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.comparison`.
+     * Enter a parse tree produced by `CrustParser.logicalAnd`.
      * @param ctx the parse tree
      */
-    enterComparison?: (ctx: ComparisonContext) => void;
+    enterLogicalAnd?: (ctx: LogicalAndContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.comparison`.
+     * Exit a parse tree produced by `CrustParser.logicalAnd`.
      * @param ctx the parse tree
      */
-    exitComparison?: (ctx: ComparisonContext) => void;
+    exitLogicalAnd?: (ctx: LogicalAndContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.term`.
+     * Enter a parse tree produced by `CrustParser.equality`.
      * @param ctx the parse tree
      */
-    enterTerm?: (ctx: TermContext) => void;
+    enterEquality?: (ctx: EqualityContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.term`.
+     * Exit a parse tree produced by `CrustParser.equality`.
      * @param ctx the parse tree
      */
-    exitTerm?: (ctx: TermContext) => void;
+    exitEquality?: (ctx: EqualityContext) => void;
     /**
-     * Enter a parse tree produced by `CrustParser.factor`.
+     * Enter a parse tree produced by `CrustParser.relational`.
      * @param ctx the parse tree
      */
-    enterFactor?: (ctx: FactorContext) => void;
+    enterRelational?: (ctx: RelationalContext) => void;
     /**
-     * Exit a parse tree produced by `CrustParser.factor`.
+     * Exit a parse tree produced by `CrustParser.relational`.
      * @param ctx the parse tree
      */
-    exitFactor?: (ctx: FactorContext) => void;
+    exitRelational?: (ctx: RelationalContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.additive`.
+     * @param ctx the parse tree
+     */
+    enterAdditive?: (ctx: AdditiveContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.additive`.
+     * @param ctx the parse tree
+     */
+    exitAdditive?: (ctx: AdditiveContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.multiplicative`.
+     * @param ctx the parse tree
+     */
+    enterMultiplicative?: (ctx: MultiplicativeContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.multiplicative`.
+     * @param ctx the parse tree
+     */
+    exitMultiplicative?: (ctx: MultiplicativeContext) => void;
     /**
      * Enter a parse tree produced by `CrustParser.unary`.
      * @param ctx the parse tree
@@ -222,26 +242,6 @@ export class CrustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitPrimary?: (ctx: PrimaryContext) => void;
-    /**
-     * Enter a parse tree produced by `CrustParser.functionCall`.
-     * @param ctx the parse tree
-     */
-    enterFunctionCall?: (ctx: FunctionCallContext) => void;
-    /**
-     * Exit a parse tree produced by `CrustParser.functionCall`.
-     * @param ctx the parse tree
-     */
-    exitFunctionCall?: (ctx: FunctionCallContext) => void;
-    /**
-     * Enter a parse tree produced by `CrustParser.arguments`.
-     * @param ctx the parse tree
-     */
-    enterArguments?: (ctx: ArgumentsContext) => void;
-    /**
-     * Exit a parse tree produced by `CrustParser.arguments`.
-     * @param ctx the parse tree
-     */
-    exitArguments?: (ctx: ArgumentsContext) => void;
     /**
      * Enter a parse tree produced by `CrustParser.type`.
      * @param ctx the parse tree
