@@ -43,11 +43,9 @@ returnStatement: 'return' expression? ';';
 // An expression statement ends with a semicolon.
 expressionStatement: expression ';';
 
-// --- Expressions ---
-// 
-// The grammar below implements a simple expression language with assignment, logical operators,
-// equality and relational operators, arithmetic, and unary operations. (Borrowing using '&' is
-// handled as a unary operator.)
+// --- Expressions --- The grammar below implements a simple expression language with assignment,
+// logical operators, equality and relational operators, arithmetic, and unary operations.
+// (Borrowing using '&' is handled as a unary operator.)
 
 expression: assignment;
 
@@ -84,7 +82,6 @@ type: Identifier;
 // --- Lexer rules ---
 
 Identifier: [a-zA-Z_][a-zA-Z_0-9]*;
-
 Integer: [0-9]+;
 
 // Skip whitespace.
