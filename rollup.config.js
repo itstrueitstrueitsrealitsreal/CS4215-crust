@@ -4,7 +4,8 @@ import typescript from "@rollup/plugin-typescript";
 
 export default {
     plugins: [nodeResolve(), typescript()],
-    input: "src/index.ts",
+    // input: "src/index.ts",
+    input: "src/Main.ts",
     output: {
         plugins: [terser()],
         dir: "dist",

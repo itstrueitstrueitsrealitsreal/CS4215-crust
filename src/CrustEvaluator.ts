@@ -22,8 +22,12 @@ export class CrustEvaluator extends BasicEvaluator {
       const tokenStream = new CommonTokenStream(lexer);
       const parser = new CrustParser(tokenStream);
       const tree = parser.program() as ProgramContext;
-      const result = this.visitor.visit(tree);
-      this.conductor.sendOutput(`Result: ${result}`);
+      const result = tree.toStringTree(parser);
+      console.log("PRINTING TREE");
+      console.log(result);
+
+      // const result = this.visitor.visit(tree);
+      // this.conductor.sendOutput(`Result: ${result}`);
     } catch (error) {
       this.conductor.sendOutput(
         `Error: ${error instanceof Error ? error.message : String(error)}`
