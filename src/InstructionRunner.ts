@@ -106,10 +106,10 @@ let free = 0;
 //  2 bytes #children, 1 byte unused]
 // Note: payload depends on the type of node
 const size_offset = 5;
-const heap_allocate = (tag, size) => {
+const heap_allocate = (tag, size) => { // size in words
 	const address = free;
-	free += size;
-	HEAP.setUint8(address * word_size, tag);
+	free += size; // in words (8 bytes)
+	HEAP.setUint8(address * word_size, tag); // byteOffset, value
 	HEAP.setUint16(address * word_size + size_offset, size);
 	return address;
 };
@@ -121,8 +121,8 @@ const heap_set = (address, x) => HEAP.setFloat64(address * word_size, x);
 const heap_get_tag = (address) => HEAP.getUint8(address * word_size);
 
 const heap_allocate_Number = (n) => {
-	const number_address = heap_allocate(Number_tag, 2);
-	heap_set(number_address + 1, n);
+	const number_address = heap_allocate(Number_tag, 2); // 2 words
+	heap_set(number_address + 1, n); // store in next word
 	return number_address;
 };
 // environment frame
@@ -195,7 +195,8 @@ HEAP; // (declared above already)
 const microcode = {
 	LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
 	// UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
-	BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop()))
+	BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
+    POP: (instr) => OS.pop(),
 }
 
 const apply_binop = (op, v2, v1) =>

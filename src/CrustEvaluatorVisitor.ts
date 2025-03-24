@@ -11,7 +11,12 @@ export class CrustEvaluatorVisitor extends AbstractParseTreeVisitor<void> implem
   
   // Visit a parse tree produced by CrustParser#prog
   visitProg(ctx: ProgContext): void {
-    this.visit(ctx.expression());
+    if (ctx.expression().length === 0) {this.instrs[this.wc++] = { tag: "LDC", val: undefined }};
+    let first = true;
+    for (const expressionCtx of ctx.expression()) {
+      first ? (first = false) : (this.instrs[this.wc++] = { tag: "POP" });
+      this.visit(expressionCtx);
+    }
   }
 
   // Visit a parse tree produced by CrustParser#expression

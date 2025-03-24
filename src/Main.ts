@@ -62,7 +62,8 @@ async function main() {
   const evaluator = new CrustEvaluator(conductor);
 
   const chunk = `
-30 * (40 - 50)
+30 * (40 - 50);
+  1+2+3;
   `;
 
   await evaluator.evaluateChunk(chunk);
