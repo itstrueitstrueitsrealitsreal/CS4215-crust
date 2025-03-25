@@ -5,6 +5,7 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 
 import { ProgContext } from "./CrustParser.js";
 import { ExpressionContext } from "./CrustParser.js";
+import { LiteralContext } from "./CrustParser.js";
 
 
 /**
@@ -27,5 +28,11 @@ export class CrustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitExpression?: (ctx: ExpressionContext) => Result;
+    /**
+     * Visit a parse tree produced by `CrustParser.literal`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitLiteral?: (ctx: LiteralContext) => Result;
 }
 

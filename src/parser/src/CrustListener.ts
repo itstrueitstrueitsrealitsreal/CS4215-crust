@@ -5,6 +5,7 @@ import { ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode } from "a
 
 import { ProgContext } from "./CrustParser.js";
 import { ExpressionContext } from "./CrustParser.js";
+import { LiteralContext } from "./CrustParser.js";
 
 
 /**
@@ -32,6 +33,16 @@ export class CrustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitExpression?: (ctx: ExpressionContext) => void;
+    /**
+     * Enter a parse tree produced by `CrustParser.literal`.
+     * @param ctx the parse tree
+     */
+    enterLiteral?: (ctx: LiteralContext) => void;
+    /**
+     * Exit a parse tree produced by `CrustParser.literal`.
+     * @param ctx the parse tree
+     */
+    exitLiteral?: (ctx: LiteralContext) => void;
 
     visitTerminal(node: TerminalNode): void {}
     visitErrorNode(node: ErrorNode): void {}

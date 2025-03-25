@@ -1,23 +1,23 @@
-export function run(instrs: any[]): number {
-	OS = [];
-	PC = 0;
-	// E = global_environment;
-	// RTS = [];
-	// stringPool = {}; // ADDED CHANGE
-	//print_code()
-	while (!(instrs[PC].tag === "DONE")) {
-		//heap_display()
-		//display(PC, "PC: ")
-		//display(instrs[PC].tag, "instr: ")
-		//print_OS("\noperands:            ");
-		//print_RTS("\nRTS:            ");
-		const instr = instrs[PC++];
-		//display(instrs[PC].tag, "next instruction: ")
-		microcode[instr.tag](instr);
-	}
-	//display(OS, "\nfinal operands:           ")
-	//print_OS()
-	return address_to_JS_value(peek(OS, 0));
+export function run(instrs: any[]): any {
+  OS = [];
+  PC = 0;
+  // E = global_environment;
+  // RTS = [];
+  // stringPool = {}; // ADDED CHANGE
+  //print_code()
+  while (!(instrs[PC].tag === "DONE")) {
+    //heap_display()
+    //display(PC, "PC: ")
+    //display(instrs[PC].tag, "instr: ")
+    //print_OS("\noperands:            ");
+    //print_RTS("\nRTS:            ");
+    const instr = instrs[PC++];
+    //display(instrs[PC].tag, "next instruction: ")
+    microcode[instr.tag](instr);
+  }
+  //display(OS, "\nfinal operands:           ")
+  //print_OS()
+  return address_to_JS_value(peek(OS, 0));
 }
 // creating global runtime environment
 // const primitive_object = {};
@@ -50,11 +50,11 @@ export function run(instrs: any[]): number {
 // add values destructively to the end of
 // given array; return the array
 const push = (array, ...items) => {
-	// fixed by Liew Zhao Wei, see Discussion 5
-	for (let item of items) {
-		array.push(item);
-	}
-	return array;
+  // fixed by Liew Zhao Wei, see Discussion 5
+  for (let item of items) {
+    array.push(item);
+  }
+  return array;
 };
 
 // return the last element of given array
@@ -74,10 +74,10 @@ const mega = 2 ** 20;
 // (in megabytes)and returns a DataView of that,
 // see https://www.javascripture.com/DataView
 const heap_make = (bytes) => {
-	if (bytes % 8 !== 0) throw new Error("heap bytes must be divisible by 8");
-	const data = new ArrayBuffer(bytes);
-	const view = new DataView(data);
-	return view;
+  if (bytes % 8 !== 0) throw new Error("heap bytes must be divisible by 8");
+  const data = new ArrayBuffer(bytes);
+  const view = new DataView(data);
+  return view;
 };
 
 // we randomly pick a heap size of 1000000 bytes
@@ -106,12 +106,13 @@ let free = 0;
 //  2 bytes #children, 1 byte unused]
 // Note: payload depends on the type of node
 const size_offset = 5;
-const heap_allocate = (tag, size) => { // size in words
-	const address = free;
-	free += size; // in words (8 bytes)
-	HEAP.setUint8(address * word_size, tag); // byteOffset, value
-	HEAP.setUint16(address * word_size + size_offset, size);
-	return address;
+const heap_allocate = (tag, size) => {
+  // size in words
+  const address = free;
+  free += size; // in words (8 bytes)
+  HEAP.setUint8(address * word_size, tag); // byteOffset, value
+  HEAP.setUint16(address * word_size + size_offset, size);
+  return address;
 };
 // get and set a word in heap at given address
 const heap_get = (address) => HEAP.getFloat64(address * word_size);
@@ -121,9 +122,9 @@ const heap_set = (address, x) => HEAP.setFloat64(address * word_size, x);
 const heap_get_tag = (address) => HEAP.getUint8(address * word_size);
 
 const heap_allocate_Number = (n) => {
-	const number_address = heap_allocate(Number_tag, 2); // 2 words
-	heap_set(number_address + 1, n); // store in next word
-	return number_address;
+  const number_address = heap_allocate(Number_tag, 2); // 2 words
+  heap_set(number_address + 1, n); // store in next word
+  return number_address;
 };
 // environment frame
 // [1 byte tag, 4 bytes unused,
@@ -131,7 +132,7 @@ const heap_allocate_Number = (n) => {
 // followed by the addresses of its values
 
 const heap_allocate_Frame = (number_of_values) =>
-	heap_allocate(Frame_tag, number_of_values + 1);
+  heap_allocate(Frame_tag, number_of_values + 1);
 
 // values
 
@@ -193,96 +194,181 @@ let RTS; // JS array (stack) of Addresses
 HEAP; // (declared above already)
 
 const microcode = {
-	LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
-	// UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
-	BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
-    POP: (instr) => OS.pop(),
-}
+  LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
+  // UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
+  BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
+  POP: (instr) => OS.pop(),
+};
 
 const apply_binop = (op, v2, v1) =>
-	JS_value_to_address(
-		binop_microcode[op](address_to_JS_value(v1), address_to_JS_value(v2)),
-	);
+  JS_value_to_address(
+    binop_microcode[op](address_to_JS_value(v1), address_to_JS_value(v2))
+  );
 
 const binop_microcode = {
-    "+": (x, y) =>
-        (is_number(x) && is_number(y)) || (is_string(x) && is_string(y))
-            ? x + y
-			: (() => { throw new Error("+ expects two numbers or two strings, got: " + [x, y]); })(),
-    // todo: add error handling to JS for the following, too
-    "*": (x, y) => x * y,
-    "-": (x, y) => x - y,
-    "/": (x, y) => x / y,
-    "%": (x, y) => x % y,
-    "<": (x, y) => x < y,
-    "<=": (x, y) => x <= y,
-    ">=": (x, y) => x >= y,
-    ">": (x, y) => x > y,
-    "===": (x, y) => x === y,
-    "!==": (x, y) => x !== y,
+  "+": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("+ expects two numbers, got: " + [x, y]);
+    }
+    return x + y;
+  },
+  "*": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("* expects two numbers, got: " + [x, y]);
+    }
+    return x * y;
+  },
+  "-": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("- expects two numbers, got: " + [x, y]);
+    }
+    return x - y;
+  },
+  "/": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("/ expects two numbers, got: " + [x, y]);
+    }
+    return x / y;
+  },
+  "<": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("< expects two numbers, got: " + [x, y]);
+    }
+    return x < y;
+  },
+  "<=": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("<= expects two numbers, got: " + [x, y]);
+    }
+    return x <= y;
+  },
+  ">": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("> expects two numbers, got: " + [x, y]);
+    }
+    return x > y;
+  },
+  ">=": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error(">= expects two numbers, got: " + [x, y]);
+    }
+    return x >= y;
+  },
+  "==": (x, y) => {
+    // Allow equality comparison for numbers
+    if (is_number(x) && is_number(y)) {
+      return x === y;
+    }
+    // Allow equality comparison for booleans
+    if (is_boolean(x) && is_boolean(y)) {
+      return x === y;
+    }
+    throw new Error(
+      "== expects both operands to be of the same type, got: " + [x, y]
+    );
+  },
+  "!=": (x, y) => {
+    // Allow inequality comparison for numbers
+    if (is_number(x) && is_number(y)) {
+      return x !== y;
+    }
+    // Allow inequality comparison for booleans
+    if (is_boolean(x) && is_boolean(y)) {
+      return x !== y;
+    }
+    throw new Error(
+      "!= expects both operands to be of the same type, got: " + [x, y]
+    );
+  },
+  "&&": (x, y) => {
+    if (!is_boolean(x) || !is_boolean(y)) {
+      throw new Error("&& expects two booleans, got: " + [x, y]);
+    }
+    return x && y;
+  },
+  "||": (x, y) => {
+    if (!is_boolean(x) || !is_boolean(y)) {
+      throw new Error("|| expects two booleans, got: " + [x, y]);
+    }
+    return x || y;
+  },
 };
 
 //
 // conversions between addresses and JS_value
 //
-const address_to_JS_value = (x) => heap_get(x + 1);
-	// is_Boolean(x)
-	// 	? is_True(x)
-	// 		? true
-	// 		: false
-	// 	: is_Number(x)
-	// 	? heap_get(x + 1)
-	// 	: is_Undefined(x)
-	// 	? undefined
-	// 	: is_Unassigned(x)
-	// 	? "<unassigned>"
-	// 	: is_Null(x)
-	// 	? null
-	// 	: is_String(x); // ADDED CHANGE
-		// ? heap_get_string(x) // ADDED CHANGE
-		// : is_Pair(x)
-		// ? [
-		// 		address_to_JS_value(heap_get_child(x, 0)),
-		// 		address_to_JS_value(heap_get_child(x, 1)),
-		//   ]
-		// : is_Closure(x)
-		// ? "<closure>"
-		// : is_Builtin(x)
-		// ? "<builtin>"
-		// : "unknown word tag: " + word_to_string(x);
-
-const JS_value_to_address = (x) =>
-	is_boolean(x)
-		? x
-			? True
-			: False
-		: is_number(x)
-		? heap_allocate_Number(x)
-		: is_undefined(x)
-		? Undefined
-		: is_null(x)
-		? Null
-		: is_string(x); // ADDED CHANGE
-		// ? heap_allocate_String(x) // ADDED CHANGE
-		// : is_pair(x)
-		// ? heap_allocate_Pair(
-		// 		JS_value_to_address(head(x)),
-		// 		JS_value_to_address(tail(x)),
-		//   )
-		// : "unknown word tag: " + word_to_string(x);
+const address_to_JS_value = (x) => {
+  if (is_Number(x)) return heap_get(x + 1);
+  if (is_Boolean(x)) return is_True(x);
+  if (is_Undefined(x)) return undefined;
+  if (is_Null(x)) return null;
+  // Add other type conversions as needed
+  throw new Error(`Cannot convert address ${x} to JS value`);
+};
+// is_Boolean(x)
+// 	? is_True(x)
+// 		? true
+// 		: false
+// 	: is_Number(x)
+// 	? heap_get(x + 1)
+// 	: is_Undefined(x)
+// 	? undefined
+// 	: is_Unassigned(x)
+// 	? "<unassigned>"
+// 	: is_Null(x)
+// 	? null
+// 	: is_String(x); // ADDED CHANGE
+// ? heap_get_string(x) // ADDED CHANGE
+// : is_Pair(x)
+// ? [
+// 		address_to_JS_value(heap_get_child(x, 0)),
+// 		address_to_JS_value(heap_get_child(x, 1)),
+//   ]
+// : is_Closure(x)
+// ? "<closure>"
+// : is_Builtin(x)
+// ? "<builtin>"
+// : "unknown word tag: " + word_to_string(x);
+const JS_value_to_address = (x) => {
+  if (typeof x === "number") return heap_allocate_Number(x);
+  if (typeof x === "boolean") return x ? True : False;
+  if (x === undefined) return Undefined;
+  if (x === null) return Null;
+  // Add other type conversions as needed
+  throw new Error(`Cannot convert JS value ${x} to address`);
+};
+// const JS_value_to_address = (x) =>
+//   is_boolean(x)
+//     ? x
+//       ? True
+//       : False
+//     : is_number(x)
+//     ? heap_allocate_Number(x)
+//     : is_undefined(x)
+//     ? Undefined
+//     : is_null(x)
+//     ? Null
+//     : is_string(x); // ADDED CHANGE
+// ? heap_allocate_String(x) // ADDED CHANGE
+// : is_pair(x)
+// ? heap_allocate_Pair(
+// 		JS_value_to_address(head(x)),
+// 		JS_value_to_address(tail(x)),
+//   )
+// : "unknown word tag: " + word_to_string(x);
 
 const is_boolean = (value: any): boolean => {
-    return typeof value === "boolean";
+  return typeof value === "boolean";
 };
 const is_number = (value: any): boolean => {
-    return typeof value === "number";
+  return typeof value === "number";
 };
 const is_undefined = (value: any): boolean => {
-    return value === undefined;
+  return value === undefined;
 };
 const is_string = (value: any): boolean => {
-    return typeof value === "string";
+  return typeof value === "string";
 };
 const is_null = (value: any): boolean => {
-    return value === null;
+  return value === null;
 };
