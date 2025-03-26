@@ -195,7 +195,7 @@ HEAP; // (declared above already)
 
 const microcode = {
   LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
-  // UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
+  UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
   BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
   POP: (instr) => OS.pop(),
 };
@@ -229,6 +229,42 @@ const binop_microcode = {
       throw new Error("/ expects two numbers, got: " + [x, y]);
     }
     return x / y;
+  },
+  "%": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("% expects two numbers, got: " + [x, y]);
+    }
+    return x % y;
+  },
+  "<<": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("<< expects two numbers, got: " + [x, y]);
+    }
+    return x << y;
+  },
+  ">>": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error(">> expects two numbers, got: " + [x, y]);
+    }
+    return x >> y;
+  },
+  "&": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("& expects two numbers, got: " + [x, y]);
+    }
+    return x & y;
+  },
+  "^": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("^ expects two numbers, got: " + [x, y]);
+    }
+    return x ^ y;
+  },
+  "|": (x, y) => {
+    if (!is_number(x) || !is_number(y)) {
+      throw new Error("| expects two numbers, got: " + [x, y]);
+    }
+    return x | y;
   },
   "<": (x, y) => {
     if (!is_number(x) || !is_number(y)) {
@@ -291,6 +327,26 @@ const binop_microcode = {
       throw new Error("|| expects two booleans, got: " + [x, y]);
     }
     return x || y;
+  },
+};
+
+const apply_unop = (op, v) => {
+  const value = address_to_JS_value(v);
+  return JS_value_to_address(unop_microcode[op](value));
+};
+
+const unop_microcode = {
+  "+": (x) => {
+    if (!is_number(x)) throw new Error("Unary + expects a number");
+    return x; // Unary plus is usually a no-op
+  },
+  "-": (x) => {
+    if (!is_number(x)) throw new Error("Unary - expects a number");
+    return -x;
+  },
+  "!": (x) => {
+    if (!is_boolean(x)) throw new Error("Unary ! expects a boolean");
+    return !x;
   },
 };
 

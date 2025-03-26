@@ -27,26 +27,34 @@ export class CrustParser extends antlr.Parser {
     public static readonly T__12 = 13;
     public static readonly T__13 = 14;
     public static readonly T__14 = 15;
-    public static readonly INT = 16;
-    public static readonly BOOL = 17;
-    public static readonly CHAR = 18;
-    public static readonly IDENTIFIER = 19;
-    public static readonly WS = 20;
-    public static readonly COMMENT = 21;
-    public static readonly BLOCK_COMMENT = 22;
+    public static readonly T__15 = 16;
+    public static readonly T__16 = 17;
+    public static readonly T__17 = 18;
+    public static readonly T__18 = 19;
+    public static readonly T__19 = 20;
+    public static readonly T__20 = 21;
+    public static readonly T__21 = 22;
+    public static readonly INT = 23;
+    public static readonly BOOL = 24;
+    public static readonly CHAR = 25;
+    public static readonly IDENTIFIER = 26;
+    public static readonly WS = 27;
+    public static readonly COMMENT = 28;
+    public static readonly BLOCK_COMMENT = 29;
     public static readonly RULE_prog = 0;
     public static readonly RULE_expression = 1;
     public static readonly RULE_literal = 2;
 
     public static readonly literalNames = [
-        null, "';'", "'*'", "'/'", "'+'", "'-'", "'<'", "'<='", "'>'", "'>='", 
-        "'=='", "'!='", "'&&'", "'||'", "'('", "')'"
+        null, "';'", "'('", "')'", "'-'", "'!'", "'*'", "'/'", "'%'", "'+'", 
+        "'<<'", "'>>'", "'<'", "'<='", "'>'", "'>='", "'=='", "'!='", "'&'", 
+        "'^'", "'|'", "'&&'", "'||'"
     ];
 
     public static readonly symbolicNames = [
         null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, "INT", "BOOL", "CHAR", "IDENTIFIER", 
-        "WS", "COMMENT", "BLOCK_COMMENT"
+        null, null, null, null, null, null, null, null, null, null, null, 
+        null, "INT", "BOOL", "CHAR", "IDENTIFIER", "WS", "COMMENT", "BLOCK_COMMENT"
     ];
     public static readonly ruleNames = [
         "prog", "expression", "literal",
@@ -88,7 +96,7 @@ export class CrustParser extends antlr.Parser {
                 this.state = 11;
                 this.errorHandler.sync(this);
                 _la = this.tokenStream.LA(1);
-            } while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 475136) !== 0));
+            } while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 58720308) !== 0));
             this.state = 13;
             this.match(CrustParser.EOF);
             }
@@ -125,40 +133,48 @@ export class CrustParser extends antlr.Parser {
             let alternative: number;
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 23;
+            this.state = 25;
             this.errorHandler.sync(this);
-            switch (this.interpreter.adaptivePredict(this.tokenStream, 1, this.context) ) {
-            case 1:
+            switch (this.tokenStream.LA(1)) {
+            case CrustParser.INT:
+            case CrustParser.BOOL:
+            case CrustParser.CHAR:
                 {
                 this.state = 16;
                 this.literal();
                 }
                 break;
-            case 2:
+            case CrustParser.T__1:
                 {
                 this.state = 17;
-                this.match(CrustParser.INT);
-                }
-                break;
-            case 3:
-                {
+                this.match(CrustParser.T__1);
                 this.state = 18;
-                this.match(CrustParser.BOOL);
-                }
-                break;
-            case 4:
-                {
-                this.state = 19;
-                this.match(CrustParser.T__13);
-                this.state = 20;
                 this.expression(0);
-                this.state = 21;
-                this.match(CrustParser.T__14);
+                this.state = 19;
+                this.match(CrustParser.T__2);
                 }
                 break;
+            case CrustParser.T__3:
+                {
+                this.state = 21;
+                this.match(CrustParser.T__3);
+                this.state = 22;
+                this.expression(11);
+                }
+                break;
+            case CrustParser.T__4:
+                {
+                this.state = 23;
+                this.match(CrustParser.T__4);
+                this.state = 24;
+                this.expression(10);
+                }
+                break;
+            default:
+                throw new antlr.NoViableAltException(this);
             }
             this.context!.stop = this.tokenStream.LT(-1);
-            this.state = 42;
+            this.state = 56;
             this.errorHandler.sync(this);
             alternative = this.interpreter.adaptivePredict(this.tokenStream, 3, this.context);
             while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
@@ -168,84 +184,62 @@ export class CrustParser extends antlr.Parser {
                     }
                     previousContext = localContext;
                     {
-                    this.state = 40;
+                    this.state = 54;
                     this.errorHandler.sync(this);
                     switch (this.interpreter.adaptivePredict(this.tokenStream, 2, this.context) ) {
                     case 1:
                         {
                         localContext = new ExpressionContext(parentContext, parentState);
                         this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
-                        this.state = 25;
-                        if (!(this.precpred(this.context, 8))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 8)");
+                        this.state = 27;
+                        if (!(this.precpred(this.context, 9))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 9)");
                         }
-                        this.state = 26;
+                        this.state = 28;
                         localContext._op = this.tokenStream.LT(1);
                         _la = this.tokenStream.LA(1);
-                        if(!(_la === 2 || _la === 3)) {
+                        if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 448) !== 0))) {
                             localContext._op = this.errorHandler.recoverInline(this);
                         }
                         else {
                             this.errorHandler.reportMatch(this);
                             this.consume();
                         }
-                        this.state = 27;
-                        this.expression(9);
+                        this.state = 29;
+                        this.expression(10);
                         }
                         break;
                     case 2:
                         {
                         localContext = new ExpressionContext(parentContext, parentState);
                         this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
-                        this.state = 28;
-                        if (!(this.precpred(this.context, 7))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 7)");
+                        this.state = 30;
+                        if (!(this.precpred(this.context, 8))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 8)");
                         }
-                        this.state = 29;
+                        this.state = 31;
                         localContext._op = this.tokenStream.LT(1);
                         _la = this.tokenStream.LA(1);
-                        if(!(_la === 4 || _la === 5)) {
+                        if(!(_la === 4 || _la === 9)) {
                             localContext._op = this.errorHandler.recoverInline(this);
                         }
                         else {
                             this.errorHandler.reportMatch(this);
                             this.consume();
                         }
-                        this.state = 30;
-                        this.expression(8);
+                        this.state = 32;
+                        this.expression(9);
                         }
                         break;
                     case 3:
                         {
                         localContext = new ExpressionContext(parentContext, parentState);
                         this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
-                        this.state = 31;
-                        if (!(this.precpred(this.context, 6))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 6)");
-                        }
-                        this.state = 32;
-                        localContext._op = this.tokenStream.LT(1);
-                        _la = this.tokenStream.LA(1);
-                        if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 960) !== 0))) {
-                            localContext._op = this.errorHandler.recoverInline(this);
-                        }
-                        else {
-                            this.errorHandler.reportMatch(this);
-                            this.consume();
-                        }
                         this.state = 33;
-                        this.expression(7);
+                        if (!(this.precpred(this.context, 7))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 7)");
                         }
-                        break;
-                    case 4:
-                        {
-                        localContext = new ExpressionContext(parentContext, parentState);
-                        this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
                         this.state = 34;
-                        if (!(this.precpred(this.context, 5))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 5)");
-                        }
-                        this.state = 35;
                         localContext._op = this.tokenStream.LT(1);
                         _la = this.tokenStream.LA(1);
                         if(!(_la === 10 || _la === 11)) {
@@ -255,36 +249,122 @@ export class CrustParser extends antlr.Parser {
                             this.errorHandler.reportMatch(this);
                             this.consume();
                         }
-                        this.state = 36;
-                        this.expression(6);
+                        this.state = 35;
+                        this.expression(8);
                         }
                         break;
-                    case 5:
+                    case 4:
                         {
                         localContext = new ExpressionContext(parentContext, parentState);
                         this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
-                        this.state = 37;
-                        if (!(this.precpred(this.context, 4))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 4)");
+                        this.state = 36;
+                        if (!(this.precpred(this.context, 6))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 6)");
                         }
-                        this.state = 38;
+                        this.state = 37;
                         localContext._op = this.tokenStream.LT(1);
                         _la = this.tokenStream.LA(1);
-                        if(!(_la === 12 || _la === 13)) {
+                        if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 61440) !== 0))) {
                             localContext._op = this.errorHandler.recoverInline(this);
                         }
                         else {
                             this.errorHandler.reportMatch(this);
                             this.consume();
                         }
+                        this.state = 38;
+                        this.expression(7);
+                        }
+                        break;
+                    case 5:
+                        {
+                        localContext = new ExpressionContext(parentContext, parentState);
+                        this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
                         this.state = 39;
+                        if (!(this.precpred(this.context, 5))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 5)");
+                        }
+                        this.state = 40;
+                        localContext._op = this.tokenStream.LT(1);
+                        _la = this.tokenStream.LA(1);
+                        if(!(_la === 16 || _la === 17)) {
+                            localContext._op = this.errorHandler.recoverInline(this);
+                        }
+                        else {
+                            this.errorHandler.reportMatch(this);
+                            this.consume();
+                        }
+                        this.state = 41;
+                        this.expression(6);
+                        }
+                        break;
+                    case 6:
+                        {
+                        localContext = new ExpressionContext(parentContext, parentState);
+                        this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
+                        this.state = 42;
+                        if (!(this.precpred(this.context, 4))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 4)");
+                        }
+                        this.state = 43;
+                        localContext._op = this.match(CrustParser.T__17);
+                        this.state = 44;
                         this.expression(5);
+                        }
+                        break;
+                    case 7:
+                        {
+                        localContext = new ExpressionContext(parentContext, parentState);
+                        this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
+                        this.state = 45;
+                        if (!(this.precpred(this.context, 3))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 3)");
+                        }
+                        this.state = 46;
+                        localContext._op = this.match(CrustParser.T__18);
+                        this.state = 47;
+                        this.expression(4);
+                        }
+                        break;
+                    case 8:
+                        {
+                        localContext = new ExpressionContext(parentContext, parentState);
+                        this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
+                        this.state = 48;
+                        if (!(this.precpred(this.context, 2))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 2)");
+                        }
+                        this.state = 49;
+                        localContext._op = this.match(CrustParser.T__19);
+                        this.state = 50;
+                        this.expression(3);
+                        }
+                        break;
+                    case 9:
+                        {
+                        localContext = new ExpressionContext(parentContext, parentState);
+                        this.pushNewRecursionContext(localContext, _startState, CrustParser.RULE_expression);
+                        this.state = 51;
+                        if (!(this.precpred(this.context, 1))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 1)");
+                        }
+                        this.state = 52;
+                        localContext._op = this.tokenStream.LT(1);
+                        _la = this.tokenStream.LA(1);
+                        if(!(_la === 21 || _la === 22)) {
+                            localContext._op = this.errorHandler.recoverInline(this);
+                        }
+                        else {
+                            this.errorHandler.reportMatch(this);
+                            this.consume();
+                        }
+                        this.state = 53;
+                        this.expression(2);
                         }
                         break;
                     }
                     }
                 }
-                this.state = 44;
+                this.state = 58;
                 this.errorHandler.sync(this);
                 alternative = this.interpreter.adaptivePredict(this.tokenStream, 3, this.context);
             }
@@ -310,9 +390,9 @@ export class CrustParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 45;
+            this.state = 59;
             _la = this.tokenStream.LA(1);
-            if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 458752) !== 0))) {
+            if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 58720256) !== 0))) {
             this.errorHandler.recoverInline(this);
             }
             else {
@@ -345,37 +425,50 @@ export class CrustParser extends antlr.Parser {
     private expression_sempred(localContext: ExpressionContext | null, predIndex: number): boolean {
         switch (predIndex) {
         case 0:
-            return this.precpred(this.context, 8);
+            return this.precpred(this.context, 9);
         case 1:
-            return this.precpred(this.context, 7);
+            return this.precpred(this.context, 8);
         case 2:
-            return this.precpred(this.context, 6);
+            return this.precpred(this.context, 7);
         case 3:
-            return this.precpred(this.context, 5);
+            return this.precpred(this.context, 6);
         case 4:
+            return this.precpred(this.context, 5);
+        case 5:
             return this.precpred(this.context, 4);
+        case 6:
+            return this.precpred(this.context, 3);
+        case 7:
+            return this.precpred(this.context, 2);
+        case 8:
+            return this.precpred(this.context, 1);
         }
         return true;
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,22,48,2,0,7,0,2,1,7,1,2,2,7,2,1,0,1,0,1,0,4,0,10,8,0,11,0,12,
-        0,11,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,24,8,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,41,8,1,10,
-        1,12,1,44,9,1,1,2,1,2,1,2,0,1,2,3,0,2,4,0,6,1,0,2,3,1,0,4,5,1,0,
-        6,9,1,0,10,11,1,0,12,13,1,0,16,18,53,0,9,1,0,0,0,2,23,1,0,0,0,4,
-        45,1,0,0,0,6,7,3,2,1,0,7,8,5,1,0,0,8,10,1,0,0,0,9,6,1,0,0,0,10,11,
-        1,0,0,0,11,9,1,0,0,0,11,12,1,0,0,0,12,13,1,0,0,0,13,14,5,0,0,1,14,
-        1,1,0,0,0,15,16,6,1,-1,0,16,24,3,4,2,0,17,24,5,16,0,0,18,24,5,17,
-        0,0,19,20,5,14,0,0,20,21,3,2,1,0,21,22,5,15,0,0,22,24,1,0,0,0,23,
-        15,1,0,0,0,23,17,1,0,0,0,23,18,1,0,0,0,23,19,1,0,0,0,24,42,1,0,0,
-        0,25,26,10,8,0,0,26,27,7,0,0,0,27,41,3,2,1,9,28,29,10,7,0,0,29,30,
-        7,1,0,0,30,41,3,2,1,8,31,32,10,6,0,0,32,33,7,2,0,0,33,41,3,2,1,7,
-        34,35,10,5,0,0,35,36,7,3,0,0,36,41,3,2,1,6,37,38,10,4,0,0,38,39,
-        7,4,0,0,39,41,3,2,1,5,40,25,1,0,0,0,40,28,1,0,0,0,40,31,1,0,0,0,
-        40,34,1,0,0,0,40,37,1,0,0,0,41,44,1,0,0,0,42,40,1,0,0,0,42,43,1,
-        0,0,0,43,3,1,0,0,0,44,42,1,0,0,0,45,46,7,5,0,0,46,5,1,0,0,0,4,11,
-        23,40,42
+        4,1,29,62,2,0,7,0,2,1,7,1,2,2,7,2,1,0,1,0,1,0,4,0,10,8,0,11,0,12,
+        0,11,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,26,8,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,55,8,1,10,1,12,1,
+        58,9,1,1,2,1,2,1,2,0,1,2,3,0,2,4,0,7,1,0,6,8,2,0,4,4,9,9,1,0,10,
+        11,1,0,12,15,1,0,16,17,1,0,21,22,1,0,23,25,71,0,9,1,0,0,0,2,25,1,
+        0,0,0,4,59,1,0,0,0,6,7,3,2,1,0,7,8,5,1,0,0,8,10,1,0,0,0,9,6,1,0,
+        0,0,10,11,1,0,0,0,11,9,1,0,0,0,11,12,1,0,0,0,12,13,1,0,0,0,13,14,
+        5,0,0,1,14,1,1,0,0,0,15,16,6,1,-1,0,16,26,3,4,2,0,17,18,5,2,0,0,
+        18,19,3,2,1,0,19,20,5,3,0,0,20,26,1,0,0,0,21,22,5,4,0,0,22,26,3,
+        2,1,11,23,24,5,5,0,0,24,26,3,2,1,10,25,15,1,0,0,0,25,17,1,0,0,0,
+        25,21,1,0,0,0,25,23,1,0,0,0,26,56,1,0,0,0,27,28,10,9,0,0,28,29,7,
+        0,0,0,29,55,3,2,1,10,30,31,10,8,0,0,31,32,7,1,0,0,32,55,3,2,1,9,
+        33,34,10,7,0,0,34,35,7,2,0,0,35,55,3,2,1,8,36,37,10,6,0,0,37,38,
+        7,3,0,0,38,55,3,2,1,7,39,40,10,5,0,0,40,41,7,4,0,0,41,55,3,2,1,6,
+        42,43,10,4,0,0,43,44,5,18,0,0,44,55,3,2,1,5,45,46,10,3,0,0,46,47,
+        5,19,0,0,47,55,3,2,1,4,48,49,10,2,0,0,49,50,5,20,0,0,50,55,3,2,1,
+        3,51,52,10,1,0,0,52,53,7,5,0,0,53,55,3,2,1,2,54,27,1,0,0,0,54,30,
+        1,0,0,0,54,33,1,0,0,0,54,36,1,0,0,0,54,39,1,0,0,0,54,42,1,0,0,0,
+        54,45,1,0,0,0,54,48,1,0,0,0,54,51,1,0,0,0,55,58,1,0,0,0,56,54,1,
+        0,0,0,56,57,1,0,0,0,57,3,1,0,0,0,58,56,1,0,0,0,59,60,7,6,0,0,60,
+        5,1,0,0,0,4,11,25,54,56
     ];
 
     private static __ATN: antlr.ATN;
@@ -443,12 +536,6 @@ export class ExpressionContext extends antlr.ParserRuleContext {
     }
     public literal(): LiteralContext | null {
         return this.getRuleContext(0, LiteralContext);
-    }
-    public INT(): antlr.TerminalNode | null {
-        return this.getToken(CrustParser.INT, 0);
-    }
-    public BOOL(): antlr.TerminalNode | null {
-        return this.getToken(CrustParser.BOOL, 0);
     }
     public expression(): ExpressionContext[];
     public expression(i: number): ExpressionContext | null;

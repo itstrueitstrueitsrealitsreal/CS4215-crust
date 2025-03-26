@@ -4,14 +4,18 @@ prog: (expression ';')+ EOF; // A program is one or more expressions, each endin
 
 expression:
 	literal
-	| expression op = ('*' | '/') expression // Note: Reordered for proper precedence
-	| expression op = ('+' | '-') expression
-	| expression op = ('<' | '<=' | '>' | '>=') expression
-	| expression op = ('==' | '!=') expression
-	| expression op = ('&&' | '||') expression
-	| INT
-	| BOOL
-	| '(' expression ')';
+	| '(' expression ')'
+	| '-' expression // unary minus
+	| '!' expression // logical not
+	| expression op = ('*' | '/' | '%') expression // multiplicative: *, /, %
+	| expression op = ('+' | '-') expression // additive: +, -
+	| expression op = ('<<' | '>>') expression // bit-shift: <<, >>
+	| expression op = ('<' | '<=' | '>' | '>=') expression // relational: <, <=, >, >=
+	| expression op = ('==' | '!=') expression // equality: ==, !=
+	| expression op = '&' expression // bitwise AND
+	| expression op = '^' expression // bitwise XOR
+	| expression op = '|' expression // bitwise OR
+	| expression op = ('&&' | '||') expression; // logical AND/OR
 
 literal: INT | BOOL | CHAR;
 INT: [0-9]+;

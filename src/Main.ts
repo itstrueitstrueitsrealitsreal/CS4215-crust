@@ -65,20 +65,11 @@ async function main() {
   const evaluator = new CrustEvaluator(conductor);
 
   const chunk = `
-    30 * (40 - 50);
-    1 + 2 + 3;
-    // "peepee";
-    true;
-    false;
-    true && false;
-    true || false;
-    1 + 2 * 3;
-    1 != 2;
-    1 > 2;
-    1 < 2;
-    1 >= 2;
-    1 <= 2;
-    1 == 1;
+  2>>1; 
+  2<<1;
+  3 / 2;
+  1 & 0;
+  1 | 0;
   `;
 
   await evaluator.evaluateChunk(chunk);

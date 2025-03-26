@@ -26,23 +26,26 @@ export class CrustEvaluatorVisitor
 
   // Visit a parse tree produced by CrustParser#expression
   visitExpression(ctx: ExpressionContext): void {
-    if (ctx.getChildCount() == 1) {
-      // Handle different literal types
+    if (ctx.getChildCount() === 1) {
       const text = ctx.getText();
       const val =
         text === "true" ? true : text === "false" ? false : parseInt(text);
-
       this.instrs[this.wc++] = { tag: "LDC", val: val };
+    } else if (ctx.getChildCount() === 2) {
+      const op = ctx.getChild(0).getText();
+      this.visit(ctx.getChild(1) as ExpressionContext);
+      this.instrs[this.wc++] = { tag: "UNOP", sym: op };
     } else if (ctx.getChildCount() === 3) {
       if (
         ctx.getChild(0).getText() === "(" &&
         ctx.getChild(2).getText() === ")"
       ) {
+        // Parenthesized expression
         this.visit(ctx.getChild(1) as ExpressionContext);
       } else {
-        // If the expression is a binary operation, compile the operands and add a binary operation instruction
-        this.visit(ctx.getChild(0)); // Compile the first operand
-        this.visit(ctx.getChild(2)); // Compile the second operand
+        // Binary operator: compile left and right operands
+        this.visit(ctx.getChild(0)); // left operand
+        this.visit(ctx.getChild(2)); // right operand
         this.instrs[this.wc++] = {
           tag: "BINOP",
           sym: ctx.getChild(1).getText(),

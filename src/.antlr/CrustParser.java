@@ -17,8 +17,9 @@ public class CrustParser extends Parser {
 		new PredictionContextCache();
 	public static final int
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
-		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, INT=16, BOOL=17, 
-		CHAR=18, IDENTIFIER=19, WS=20, COMMENT=21, BLOCK_COMMENT=22;
+		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17, 
+		T__17=18, T__18=19, T__19=20, T__20=21, T__21=22, INT=23, BOOL=24, CHAR=25, 
+		IDENTIFIER=26, WS=27, COMMENT=28, BLOCK_COMMENT=29;
 	public static final int
 		RULE_prog = 0, RULE_expression = 1, RULE_literal = 2;
 	private static String[] makeRuleNames() {
@@ -30,16 +31,17 @@ public class CrustParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "';'", "'*'", "'/'", "'+'", "'-'", "'<'", "'<='", "'>'", "'>='", 
-			"'=='", "'!='", "'&&'", "'||'", "'('", "')'"
+			null, "';'", "'('", "')'", "'-'", "'!'", "'*'", "'/'", "'%'", "'+'", 
+			"'<<'", "'>>'", "'<'", "'<='", "'>'", "'>='", "'=='", "'!='", "'&'", 
+			"'^'", "'|'", "'&&'", "'||'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
 			null, null, null, null, null, null, null, null, null, null, null, null, 
-			null, null, null, null, "INT", "BOOL", "CHAR", "IDENTIFIER", "WS", "COMMENT", 
-			"BLOCK_COMMENT"
+			null, null, null, null, null, null, null, null, null, null, null, "INT", 
+			"BOOL", "CHAR", "IDENTIFIER", "WS", "COMMENT", "BLOCK_COMMENT"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -130,7 +132,7 @@ public class CrustParser extends Parser {
 				setState(11); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 475136L) != 0) );
+			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 58720308L) != 0) );
 			setState(13);
 			match(EOF);
 			}
@@ -152,8 +154,6 @@ public class CrustParser extends Parser {
 		public LiteralContext literal() {
 			return getRuleContext(LiteralContext.class,0);
 		}
-		public TerminalNode INT() { return getToken(CrustParser.INT, 0); }
-		public TerminalNode BOOL() { return getToken(CrustParser.BOOL, 0); }
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
@@ -182,40 +182,48 @@ public class CrustParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(23);
+			setState(25);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,1,_ctx) ) {
-			case 1:
+			switch (_input.LA(1)) {
+			case INT:
+			case BOOL:
+			case CHAR:
 				{
 				setState(16);
 				literal();
 				}
 				break;
-			case 2:
+			case T__1:
 				{
 				setState(17);
-				match(INT);
-				}
-				break;
-			case 3:
-				{
+				match(T__1);
 				setState(18);
-				match(BOOL);
-				}
-				break;
-			case 4:
-				{
-				setState(19);
-				match(T__13);
-				setState(20);
 				expression(0);
-				setState(21);
-				match(T__14);
+				setState(19);
+				match(T__2);
 				}
 				break;
+			case T__3:
+				{
+				setState(21);
+				match(T__3);
+				setState(22);
+				expression(11);
+				}
+				break;
+			case T__4:
+				{
+				setState(23);
+				match(T__4);
+				setState(24);
+				expression(10);
+				}
+				break;
+			default:
+				throw new NoViableAltException(this);
 			}
 			_ctx.stop = _input.LT(-1);
-			setState(42);
+			setState(56);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,3,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
@@ -223,19 +231,19 @@ public class CrustParser extends Parser {
 					if ( _parseListeners!=null ) triggerExitRuleEvent();
 					_prevctx = _localctx;
 					{
-					setState(40);
+					setState(54);
 					_errHandler.sync(this);
 					switch ( getInterpreter().adaptivePredict(_input,2,_ctx) ) {
 					case 1:
 						{
 						_localctx = new ExpressionContext(_parentctx, _parentState);
 						pushNewRecursionContext(_localctx, _startState, RULE_expression);
-						setState(25);
-						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
-						setState(26);
+						setState(27);
+						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
+						setState(28);
 						((ExpressionContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !(_la==T__1 || _la==T__2) ) {
+						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 448L) != 0)) ) {
 							((ExpressionContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -243,20 +251,20 @@ public class CrustParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
-						setState(27);
-						expression(9);
+						setState(29);
+						expression(10);
 						}
 						break;
 					case 2:
 						{
 						_localctx = new ExpressionContext(_parentctx, _parentState);
 						pushNewRecursionContext(_localctx, _startState, RULE_expression);
-						setState(28);
-						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
-						setState(29);
+						setState(30);
+						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
+						setState(31);
 						((ExpressionContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !(_la==T__3 || _la==T__4) ) {
+						if ( !(_la==T__3 || _la==T__8) ) {
 							((ExpressionContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -264,38 +272,17 @@ public class CrustParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
-						setState(30);
-						expression(8);
+						setState(32);
+						expression(9);
 						}
 						break;
 					case 3:
 						{
 						_localctx = new ExpressionContext(_parentctx, _parentState);
 						pushNewRecursionContext(_localctx, _startState, RULE_expression);
-						setState(31);
-						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
-						setState(32);
-						((ExpressionContext)_localctx).op = _input.LT(1);
-						_la = _input.LA(1);
-						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 960L) != 0)) ) {
-							((ExpressionContext)_localctx).op = (Token)_errHandler.recoverInline(this);
-						}
-						else {
-							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
-							_errHandler.reportMatch(this);
-							consume();
-						}
 						setState(33);
-						expression(7);
-						}
-						break;
-					case 4:
-						{
-						_localctx = new ExpressionContext(_parentctx, _parentState);
-						pushNewRecursionContext(_localctx, _startState, RULE_expression);
+						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
 						setState(34);
-						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
-						setState(35);
 						((ExpressionContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(_la==T__9 || _la==T__10) ) {
@@ -306,20 +293,20 @@ public class CrustParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
-						setState(36);
-						expression(6);
+						setState(35);
+						expression(8);
 						}
 						break;
-					case 5:
+					case 4:
 						{
 						_localctx = new ExpressionContext(_parentctx, _parentState);
 						pushNewRecursionContext(_localctx, _startState, RULE_expression);
+						setState(36);
+						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
 						setState(37);
-						if (!(precpred(_ctx, 4))) throw new FailedPredicateException(this, "precpred(_ctx, 4)");
-						setState(38);
 						((ExpressionContext)_localctx).op = _input.LT(1);
 						_la = _input.LA(1);
-						if ( !(_la==T__11 || _la==T__12) ) {
+						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 61440L) != 0)) ) {
 							((ExpressionContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 						}
 						else {
@@ -327,14 +314,92 @@ public class CrustParser extends Parser {
 							_errHandler.reportMatch(this);
 							consume();
 						}
+						setState(38);
+						expression(7);
+						}
+						break;
+					case 5:
+						{
+						_localctx = new ExpressionContext(_parentctx, _parentState);
+						pushNewRecursionContext(_localctx, _startState, RULE_expression);
 						setState(39);
+						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
+						setState(40);
+						((ExpressionContext)_localctx).op = _input.LT(1);
+						_la = _input.LA(1);
+						if ( !(_la==T__15 || _la==T__16) ) {
+							((ExpressionContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
+							consume();
+						}
+						setState(41);
+						expression(6);
+						}
+						break;
+					case 6:
+						{
+						_localctx = new ExpressionContext(_parentctx, _parentState);
+						pushNewRecursionContext(_localctx, _startState, RULE_expression);
+						setState(42);
+						if (!(precpred(_ctx, 4))) throw new FailedPredicateException(this, "precpred(_ctx, 4)");
+						setState(43);
+						((ExpressionContext)_localctx).op = match(T__17);
+						setState(44);
 						expression(5);
+						}
+						break;
+					case 7:
+						{
+						_localctx = new ExpressionContext(_parentctx, _parentState);
+						pushNewRecursionContext(_localctx, _startState, RULE_expression);
+						setState(45);
+						if (!(precpred(_ctx, 3))) throw new FailedPredicateException(this, "precpred(_ctx, 3)");
+						setState(46);
+						((ExpressionContext)_localctx).op = match(T__18);
+						setState(47);
+						expression(4);
+						}
+						break;
+					case 8:
+						{
+						_localctx = new ExpressionContext(_parentctx, _parentState);
+						pushNewRecursionContext(_localctx, _startState, RULE_expression);
+						setState(48);
+						if (!(precpred(_ctx, 2))) throw new FailedPredicateException(this, "precpred(_ctx, 2)");
+						setState(49);
+						((ExpressionContext)_localctx).op = match(T__19);
+						setState(50);
+						expression(3);
+						}
+						break;
+					case 9:
+						{
+						_localctx = new ExpressionContext(_parentctx, _parentState);
+						pushNewRecursionContext(_localctx, _startState, RULE_expression);
+						setState(51);
+						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");
+						setState(52);
+						((ExpressionContext)_localctx).op = _input.LT(1);
+						_la = _input.LA(1);
+						if ( !(_la==T__20 || _la==T__21) ) {
+							((ExpressionContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+						}
+						else {
+							if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+							_errHandler.reportMatch(this);
+							consume();
+						}
+						setState(53);
+						expression(2);
 						}
 						break;
 					}
 					} 
 				}
-				setState(44);
+				setState(58);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,3,_ctx);
 			}
@@ -369,9 +434,9 @@ public class CrustParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(45);
+			setState(59);
 			_la = _input.LA(1);
-			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 458752L) != 0)) ) {
+			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 58720256L) != 0)) ) {
 			_errHandler.recoverInline(this);
 			}
 			else {
@@ -402,54 +467,71 @@ public class CrustParser extends Parser {
 	private boolean expression_sempred(ExpressionContext _localctx, int predIndex) {
 		switch (predIndex) {
 		case 0:
-			return precpred(_ctx, 8);
+			return precpred(_ctx, 9);
 		case 1:
-			return precpred(_ctx, 7);
+			return precpred(_ctx, 8);
 		case 2:
-			return precpred(_ctx, 6);
+			return precpred(_ctx, 7);
 		case 3:
-			return precpred(_ctx, 5);
+			return precpred(_ctx, 6);
 		case 4:
+			return precpred(_ctx, 5);
+		case 5:
 			return precpred(_ctx, 4);
+		case 6:
+			return precpred(_ctx, 3);
+		case 7:
+			return precpred(_ctx, 2);
+		case 8:
+			return precpred(_ctx, 1);
 		}
 		return true;
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u00160\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001\u001d>\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0001\u0000\u0001\u0000\u0001\u0000\u0004\u0000\n\b"+
 		"\u0000\u000b\u0000\f\u0000\u000b\u0001\u0000\u0001\u0000\u0001\u0001\u0001"+
 		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
-		"\u0001\u0003\u0001\u0018\b\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
+		"\u0001\u0001\u0001\u0001\u0001\u0003\u0001\u001a\b\u0001\u0001\u0001\u0001"+
 		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
-		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0005"+
-		"\u0001)\b\u0001\n\u0001\f\u0001,\t\u0001\u0001\u0002\u0001\u0002\u0001"+
-		"\u0002\u0000\u0001\u0002\u0003\u0000\u0002\u0004\u0000\u0006\u0001\u0000"+
-		"\u0002\u0003\u0001\u0000\u0004\u0005\u0001\u0000\u0006\t\u0001\u0000\n"+
-		"\u000b\u0001\u0000\f\r\u0001\u0000\u0010\u00125\u0000\t\u0001\u0000\u0000"+
-		"\u0000\u0002\u0017\u0001\u0000\u0000\u0000\u0004-\u0001\u0000\u0000\u0000"+
-		"\u0006\u0007\u0003\u0002\u0001\u0000\u0007\b\u0005\u0001\u0000\u0000\b"+
-		"\n\u0001\u0000\u0000\u0000\t\u0006\u0001\u0000\u0000\u0000\n\u000b\u0001"+
-		"\u0000\u0000\u0000\u000b\t\u0001\u0000\u0000\u0000\u000b\f\u0001\u0000"+
-		"\u0000\u0000\f\r\u0001\u0000\u0000\u0000\r\u000e\u0005\u0000\u0000\u0001"+
-		"\u000e\u0001\u0001\u0000\u0000\u0000\u000f\u0010\u0006\u0001\uffff\uffff"+
-		"\u0000\u0010\u0018\u0003\u0004\u0002\u0000\u0011\u0018\u0005\u0010\u0000"+
-		"\u0000\u0012\u0018\u0005\u0011\u0000\u0000\u0013\u0014\u0005\u000e\u0000"+
-		"\u0000\u0014\u0015\u0003\u0002\u0001\u0000\u0015\u0016\u0005\u000f\u0000"+
-		"\u0000\u0016\u0018\u0001\u0000\u0000\u0000\u0017\u000f\u0001\u0000\u0000"+
-		"\u0000\u0017\u0011\u0001\u0000\u0000\u0000\u0017\u0012\u0001\u0000\u0000"+
-		"\u0000\u0017\u0013\u0001\u0000\u0000\u0000\u0018*\u0001\u0000\u0000\u0000"+
-		"\u0019\u001a\n\b\u0000\u0000\u001a\u001b\u0007\u0000\u0000\u0000\u001b"+
-		")\u0003\u0002\u0001\t\u001c\u001d\n\u0007\u0000\u0000\u001d\u001e\u0007"+
-		"\u0001\u0000\u0000\u001e)\u0003\u0002\u0001\b\u001f \n\u0006\u0000\u0000"+
-		" !\u0007\u0002\u0000\u0000!)\u0003\u0002\u0001\u0007\"#\n\u0005\u0000"+
-		"\u0000#$\u0007\u0003\u0000\u0000$)\u0003\u0002\u0001\u0006%&\n\u0004\u0000"+
-		"\u0000&\'\u0007\u0004\u0000\u0000\')\u0003\u0002\u0001\u0005(\u0019\u0001"+
-		"\u0000\u0000\u0000(\u001c\u0001\u0000\u0000\u0000(\u001f\u0001\u0000\u0000"+
-		"\u0000(\"\u0001\u0000\u0000\u0000(%\u0001\u0000\u0000\u0000),\u0001\u0000"+
-		"\u0000\u0000*(\u0001\u0000\u0000\u0000*+\u0001\u0000\u0000\u0000+\u0003"+
-		"\u0001\u0000\u0000\u0000,*\u0001\u0000\u0000\u0000-.\u0007\u0005\u0000"+
-		"\u0000.\u0005\u0001\u0000\u0000\u0000\u0004\u000b\u0017(*";
+		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
+		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
+		"\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001\u0001"+
+		"\u0001\u0001\u0001\u0005\u00017\b\u0001\n\u0001\f\u0001:\t\u0001\u0001"+
+		"\u0002\u0001\u0002\u0001\u0002\u0000\u0001\u0002\u0003\u0000\u0002\u0004"+
+		"\u0000\u0007\u0001\u0000\u0006\b\u0002\u0000\u0004\u0004\t\t\u0001\u0000"+
+		"\n\u000b\u0001\u0000\f\u000f\u0001\u0000\u0010\u0011\u0001\u0000\u0015"+
+		"\u0016\u0001\u0000\u0017\u0019G\u0000\t\u0001\u0000\u0000\u0000\u0002"+
+		"\u0019\u0001\u0000\u0000\u0000\u0004;\u0001\u0000\u0000\u0000\u0006\u0007"+
+		"\u0003\u0002\u0001\u0000\u0007\b\u0005\u0001\u0000\u0000\b\n\u0001\u0000"+
+		"\u0000\u0000\t\u0006\u0001\u0000\u0000\u0000\n\u000b\u0001\u0000\u0000"+
+		"\u0000\u000b\t\u0001\u0000\u0000\u0000\u000b\f\u0001\u0000\u0000\u0000"+
+		"\f\r\u0001\u0000\u0000\u0000\r\u000e\u0005\u0000\u0000\u0001\u000e\u0001"+
+		"\u0001\u0000\u0000\u0000\u000f\u0010\u0006\u0001\uffff\uffff\u0000\u0010"+
+		"\u001a\u0003\u0004\u0002\u0000\u0011\u0012\u0005\u0002\u0000\u0000\u0012"+
+		"\u0013\u0003\u0002\u0001\u0000\u0013\u0014\u0005\u0003\u0000\u0000\u0014"+
+		"\u001a\u0001\u0000\u0000\u0000\u0015\u0016\u0005\u0004\u0000\u0000\u0016"+
+		"\u001a\u0003\u0002\u0001\u000b\u0017\u0018\u0005\u0005\u0000\u0000\u0018"+
+		"\u001a\u0003\u0002\u0001\n\u0019\u000f\u0001\u0000\u0000\u0000\u0019\u0011"+
+		"\u0001\u0000\u0000\u0000\u0019\u0015\u0001\u0000\u0000\u0000\u0019\u0017"+
+		"\u0001\u0000\u0000\u0000\u001a8\u0001\u0000\u0000\u0000\u001b\u001c\n"+
+		"\t\u0000\u0000\u001c\u001d\u0007\u0000\u0000\u0000\u001d7\u0003\u0002"+
+		"\u0001\n\u001e\u001f\n\b\u0000\u0000\u001f \u0007\u0001\u0000\u0000 7"+
+		"\u0003\u0002\u0001\t!\"\n\u0007\u0000\u0000\"#\u0007\u0002\u0000\u0000"+
+		"#7\u0003\u0002\u0001\b$%\n\u0006\u0000\u0000%&\u0007\u0003\u0000\u0000"+
+		"&7\u0003\u0002\u0001\u0007\'(\n\u0005\u0000\u0000()\u0007\u0004\u0000"+
+		"\u0000)7\u0003\u0002\u0001\u0006*+\n\u0004\u0000\u0000+,\u0005\u0012\u0000"+
+		"\u0000,7\u0003\u0002\u0001\u0005-.\n\u0003\u0000\u0000./\u0005\u0013\u0000"+
+		"\u0000/7\u0003\u0002\u0001\u000401\n\u0002\u0000\u000012\u0005\u0014\u0000"+
+		"\u000027\u0003\u0002\u0001\u000334\n\u0001\u0000\u000045\u0007\u0005\u0000"+
+		"\u000057\u0003\u0002\u0001\u00026\u001b\u0001\u0000\u0000\u00006\u001e"+
+		"\u0001\u0000\u0000\u00006!\u0001\u0000\u0000\u00006$\u0001\u0000\u0000"+
+		"\u00006\'\u0001\u0000\u0000\u00006*\u0001\u0000\u0000\u00006-\u0001\u0000"+
+		"\u0000\u000060\u0001\u0000\u0000\u000063\u0001\u0000\u0000\u00007:\u0001"+
+		"\u0000\u0000\u000086\u0001\u0000\u0000\u000089\u0001\u0000\u0000\u0000"+
+		"9\u0003\u0001\u0000\u0000\u0000:8\u0001\u0000\u0000\u0000;<\u0007\u0006"+
+		"\u0000\u0000<\u0005\u0001\u0000\u0000\u0000\u0004\u000b\u001968";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
