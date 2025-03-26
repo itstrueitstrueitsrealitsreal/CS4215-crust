@@ -198,6 +198,94 @@ const microcode = {
   UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
   BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
   POP: (instr) => OS.pop(),
+  JOF: (instr) => {
+    const condition = OS.pop();
+    if (!address_to_JS_value(condition)) {
+      PC = instr.addr;
+    }
+  },
+  GOTO: (instr) => {
+    PC = instr.addr;
+  },
+
+  //   // New instructions for handling scopes and variables
+  //   ENTER_SCOPE: (instr) => {
+  //     // Push a new block frame and extend the environment with a new frame
+  //     push(RTS, heap_allocate_Blockframe(E));
+  //     const frame_address = heap_allocate_Frame(instr.num);
+  //     E = heap_Environment_extend(frame_address, E);
+  //     for (let i = 0; i < instr.num; i++) {
+  //       heap_set_child(frame_address, i, Unassigned);
+  //     }
+  //   },
+
+  //   EXIT_SCOPE: (instr) => {
+  //     // Restore environment from the block frame
+  //     E = heap_get_Blockframe_environment(RTS.pop());
+  //   },
+
+  //   LD: (instr) => {
+  //     const val = heap_get_Environment_value(E, instr.pos);
+  //     if (is_Unassigned(val)) error("access of unassigned variable");
+  //     push(OS, val);
+  //   },
+
+  //   ASSIGN: (instr) => {
+  //     heap_set_Environment_value(E, instr.pos, peek(OS, 0));
+  //   },
+
+  //   LDF: (instr) => {
+  //     const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
+  //     push(OS, closure_address);
+  //   },
+
+  //   // CALL and TAIL_CALL should be implemented following the same conventions.
+  //   CALL: (instr) => {
+  //     const arity = instr.arity;
+  //     const fun = peek(OS, arity);
+  //     if (is_Builtin(fun)) {
+  //       return apply_builtin(heap_get_Builtin_id(fun));
+  //     }
+  //     const frame_address = heap_allocate_Frame(arity);
+  //     for (let i = arity - 1; i >= 0; i--) {
+  //       heap_set_child(frame_address, i, OS.pop());
+  //     }
+  //     OS.pop(); // pop the function
+  //     push(RTS, heap_allocate_Callframe(E, PC));
+  //     E = heap_Environment_extend(
+  //       frame_address,
+  //       heap_get_Closure_environment(fun)
+  //     );
+  //     PC = heap_get_Closure_pc(fun);
+  //   },
+
+  //   TAIL_CALL: (instr) => {
+  //     const arity = instr.arity;
+  //     const fun = peek(OS, arity);
+  //     if (is_Builtin(fun)) {
+  //       return apply_builtin(heap_get_Builtin_id(fun));
+  //     }
+  //     const frame_address = heap_allocate_Frame(arity);
+  //     for (let i = arity - 1; i >= 0; i--) {
+  //       heap_set_child(frame_address, i, OS.pop());
+  //     }
+  //     OS.pop(); // pop fun
+  //     // No push to RTS for tail calls
+  //     E = heap_Environment_extend(
+  //       frame_address,
+  //       heap_get_Closure_environment(fun)
+  //     );
+  //     PC = heap_get_Closure_pc(fun);
+  //   },
+
+  //   RESET: (instr) => {
+  //     PC--;
+  //     const top_frame = RTS.pop();
+  //     if (is_Callframe(top_frame)) {
+  //       PC = heap_get_Callframe_pc(top_frame);
+  //       E = heap_get_Callframe_environment(top_frame);
+  //     }
+  //   },
 };
 
 const apply_binop = (op, v2, v1) =>
