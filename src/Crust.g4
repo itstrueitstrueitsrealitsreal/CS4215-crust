@@ -1,6 +1,27 @@
 grammar Crust;
 
-prog: (expression ';')+ EOF; // A program is one or more expressions, each ending with a semicolon.
+// A program is one or more statements ending with EOF.
+prog: (statement)+ EOF;
+
+// A statement can be an expression statement, variable declaration, if, while, or block.
+statement: exprStmt | varDecl | ifStmt | whileStmt | blockStmt;
+
+// An expression statement is an expression followed by a semicolon.
+exprStmt: expression ';';
+
+// A variable declaration: using 'let' similar to Rust.
+varDecl:
+	'let' IDENTIFIER ('=' expression)? ';'; // not implemented yet
+
+// An if statement with optional else.
+ifStmt: 'if' '(' expression ')' statement ('else' statement)?;
+
+// A while loop.
+whileStmt:
+	'while' '(' expression ')' statement; // not implemented yet
+
+// A block is a sequence of statements enclosed in braces.
+blockStmt: '{' statement* '}'; // have not implemented scope yet
 
 expression:
 	literal
