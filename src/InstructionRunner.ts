@@ -1,8 +1,11 @@
+import { push } from "./Common";
+import { binop_microcode, unop_microcode } from "./InstructionRunnerUtils/OpMicrocodeUtil";
+
 export function run(instrs: any[]): any {
   OS = [];
   PC = 0;
-  // E = global_environment;
-  // RTS = [];
+  E = global_environment;
+  RTS = [];
   // stringPool = {}; // ADDED CHANGE
   //print_code()
   while (!(instrs[PC].tag === "DONE")) {
@@ -19,126 +22,9 @@ export function run(instrs: any[]): any {
   //print_OS()
   return address_to_JS_value(peek(OS, 0));
 }
-// creating global runtime environment
-// const primitive_object = {};
-// const primitive_values = Object.values(primitive_object);
-// const frame_address = heap_allocate_Frame(primitive_values.length);
 
-// for (let i = 0; i < primitive_values.length; i++) {
-// 	const primitive_value = primitive_values[i];
-// 	if (
-// 		typeof primitive_value === "object" &&
-// 		primitive_value.hasOwnProperty("id")
-// 	) {
-// 		heap_set_child(frame_address, i, heap_allocate_Builtin(primitive_value.id));
-// 	} else if (typeof primitive_value === "undefined") {
-// 		heap_set_child(frame_address, i, Undefined);
-// 	} else {
-// 		heap_set_child(frame_address, i, heap_allocate_Number(primitive_value));
-// 	}
-// }
-
-// const global_environment = heap_Environment_extend(
-// 	frame_address,
-// 	heap_empty_Environment,
-// );
-
-/* **********************
- * using arrays as stacks
- * **********************/
-
-// add values destructively to the end of
-// given array; return the array
-const push = (array, ...items) => {
-  // fixed by Liew Zhao Wei, see Discussion 5
-  for (let item of items) {
-    array.push(item);
-  }
-  return array;
-};
-
-// return the last element of given array
-// without changing the array
+// return the last element of given array without changing the array
 const peek = (array, address) => array.slice(-1 - address)[0];
-
-/* *************************
- * HEAP
- * *************************/
-
-// HEAP is an array of bytes (JS ArrayBuffer)
-
-const word_size = 8;
-const mega = 2 ** 20;
-
-// heap_make allocates a heap of given size
-// (in megabytes)and returns a DataView of that,
-// see https://www.javascripture.com/DataView
-const heap_make = (bytes) => {
-  if (bytes % 8 !== 0) throw new Error("heap bytes must be divisible by 8");
-  const data = new ArrayBuffer(bytes);
-  const view = new DataView(data);
-  return view;
-};
-
-// we randomly pick a heap size of 1000000 bytes
-const HEAP = heap_make(1000000);
-
-// free is the next free index in HEAP
-// we keep allocating as if there was no tomorrow
-let free = 0;
-
-// for debugging: display all bits of the heap
-// const heap_display = () => {
-// 	display("", "heap:");
-// 	for (let i = 0; i < free; i++) {
-// 		display(
-// 			word_to_string(heap_get(i)),
-// 			stringify(i) + " " + stringify(heap_get(i)) + " ",
-// 		);
-// 	}
-// };
-
-// heap_allocate allocates a given number of words
-// on the heap and marks the first word with a 1-byte tag.
-// the last two bytes of the first word indicate the number
-// of children (addresses) that follow the tag word:
-// [1 byte tag, 4 bytes payload (depending on node type),
-//  2 bytes #children, 1 byte unused]
-// Note: payload depends on the type of node
-const size_offset = 5;
-const heap_allocate = (tag, size) => {
-  // size in words
-  const address = free;
-  free += size; // in words (8 bytes)
-  HEAP.setUint8(address * word_size, tag); // byteOffset, value
-  HEAP.setUint16(address * word_size + size_offset, size);
-  return address;
-};
-// get and set a word in heap at given address
-const heap_get = (address) => HEAP.getFloat64(address * word_size);
-
-const heap_set = (address, x) => HEAP.setFloat64(address * word_size, x);
-
-const heap_get_tag = (address) => HEAP.getUint8(address * word_size);
-
-const heap_allocate_Number = (n) => {
-  const number_address = heap_allocate(Number_tag, 2); // 2 words
-  heap_set(number_address + 1, n); // store in next word
-  return number_address;
-};
-// environment frame
-// [1 byte tag, 4 bytes unused,
-//  2 bytes #children, 1 byte unused]
-// followed by the addresses of its values
-
-const heap_allocate_Frame = (number_of_values) =>
-  heap_allocate(Frame_tag, number_of_values + 1);
-
-// values
-
-// All values are allocated on the heap as nodes. The first
-// word of the node is a header, and the first byte of the
-// header is a tag that identifies the type of node
 
 const False_tag = 0;
 const True_tag = 1;
@@ -154,19 +40,117 @@ const Environment_tag = 10;
 const Pair_tag = 11;
 const Builtin_tag = 12;
 const String_tag = 13; // ADDED CHANGE
-
 // Record<string, tuple(number, string)< where the key is the hash of the string
 // and the value is a tuple of the address of the string and the string itself
 let stringPool = {}; // ADDED CHANGE
 
+
+/* *************************
+ * HEAP
+ * *************************/
+// HEAP is an array of bytes (JS ArrayBuffer)
+const word_size = 8;
+const mega = 2 ** 20;
+
+// heap_make allocates a heap of given size (in megabytes)and returns a DataView of that, see https://www.javascripture.com/DataView
+const heap_make = (bytes) => {
+  if (bytes % 8 !== 0) throw new Error("heap bytes must be divisible by 8");
+  const data = new ArrayBuffer(bytes);
+  const view = new DataView(data);
+  return view;
+};
+
+const HEAP = heap_make(1000000);
+// free is the next free index in HEAP
+let free = 0;
+
+// for debugging: display all bits of the heap
+// const heap_display = () => {
+// 	display("", "heap:");
+// 	for (let i = 0; i < free; i++) {
+// 		display(
+// 			word_to_string(heap_get(i)),
+// 			stringify(i) + " " + stringify(heap_get(i)) + " ",
+// 		);
+// 	}
+// };
+
+// [1 byte tag, 4 bytes payload (depending on node type),
+//  2 bytes #children, 1 byte unused]
+// Note: payload depends on the type of node
+const size_offset = 5;
+const heap_allocate = (tag, size) => {
+  // size in words
+  const address = free;
+  free += size; // in words (8 bytes)
+  HEAP.setUint8(address * word_size, tag); // byteOffset, value
+  HEAP.setUint16(address * word_size + size_offset, size);
+  return address;
+};
+// get and set a word in heap at given address
+const heap_get = (address) => HEAP.getFloat64(address * word_size);
+const heap_set = (address, x) => HEAP.setFloat64(address * word_size, x);
+const heap_get_tag = (address) => HEAP.getUint8(address * word_size);
+const heap_get_size = (address) => HEAP.getUint16(address * word_size + size_offset);
+// child index starts at 0
+const heap_get_child = (address, child_index) => heap_get(address + 1 + child_index);
+const heap_set_child = (address, child_index, value) => heap_set(address + 1 + child_index, value);
+// access byte in heap, using address and offset
+const heap_set_byte_at_offset = (address, offset, value) => HEAP.setUint8(address * word_size + offset, value);
+
+const heap_allocate_Number = (n) => {
+  const number_address = heap_allocate(Number_tag, 2); // 2 words
+  heap_set(number_address + 1, n); // store in next word
+  return number_address;
+};
+const heap_allocate_Builtin = (id) => {
+	const address = heap_allocate(Builtin_tag, 1);
+	heap_set_byte_at_offset(address, 1, id);
+	return address;
+};
+// block frame [1 byte tag, 4 bytes unused, 2 bytes #children, 1 byte unused]
+const heap_allocate_Blockframe = (env) => {
+	const address = heap_allocate(Blockframe_tag, 2);
+	heap_set(address + 1, env);
+	return address;
+};
+const heap_get_Blockframe_environment = (address) => heap_get_child(address, 0);
+// environment frame [1 byte tag, 4 bytes unused, 2 bytes #children, 1 byte unused] followed by the addresses of its values
+const heap_allocate_Frame = (number_of_values) => heap_allocate(Frame_tag, number_of_values + 1);
+// environment [1 byte tag, 4 bytes unused, 2 bytes #children, 1 byte unused] followed by the addresses of its frames
+const heap_allocate_Environment = (number_of_frames) => heap_allocate(Environment_tag, number_of_frames + 1);
+const heap_empty_Environment = heap_allocate_Environment(0);
+// access environment given by address using a "position", i.e. a pair of frame index and value index
+const heap_get_Environment_value = (env_address, position) => {
+	const [frame_index, value_index] = position;
+	const frame_address = heap_get_child(env_address, frame_index);
+	return heap_get_child(frame_address, value_index);
+};
+const heap_set_Environment_value = (env_address, position, value) => {
+	//display(env_address, "env_address:")
+	const [frame_index, value_index] = position;
+	const frame_address = heap_get_child(env_address, frame_index);
+	heap_set_child(frame_address, value_index, value);
+};
+// extend a given environment by a new frame:
+// create a new environment that is bigger by 1 frame slot than the given environment.
+// copy the frame Addresses of the given environment to the new environment.
+// enter the address of the new frame to end of the new environment
+const heap_Environment_extend = (frame_address, env_address) => {
+	const old_size = heap_get_size(env_address);
+	const new_env_address = heap_allocate_Environment(old_size);
+	let i;
+	for (i = 0; i < old_size - 1; i++) {
+		heap_set_child(new_env_address, i, heap_get_child(env_address, i));
+	}
+	heap_set_child(new_env_address, i, frame_address);
+	return new_env_address;
+};
+
+
 // all values (including literals) are allocated on the heap.
-
-// We allocate canonical values for
-// true, false, undefined, null, and unassigned
+// We allocate canonical values for true, false, undefined, null, and unassigned
 // and make sure no such values are created at runtime
-
-// boolean values carry their value (0 for false, 1 for true)
-// in the byte following the tag
 const False = heap_allocate(False_tag, 1);
 const is_False = (address) => heap_get_tag(address) === False_tag;
 const True = heap_allocate(True_tag, 1);
@@ -185,54 +169,72 @@ const is_Unassigned = (address) => heap_get_tag(address) === Unassigned_tag;
 const Undefined = heap_allocate(Undefined_tag, 1);
 const is_Undefined = (address) => heap_get_tag(address) === Undefined_tag;
 
+
+// creating global runtime environment
+const primitive_object = {};
+const primitive_values = Object.values(primitive_object);
+const frame_address = heap_allocate_Frame(primitive_values.length);
+for (let i = 0; i < primitive_values.length; i++) {
+	const primitive_value = primitive_values[i];
+    if (
+        typeof primitive_value === "object" && "id" in primitive_value
+    ) {
+        heap_set_child(frame_address, i, heap_allocate_Builtin((primitive_value as { id: number }).id));
+    } else if (typeof primitive_value === "undefined") {
+		heap_set_child(frame_address, i, Undefined);
+	} else {
+		heap_set_child(frame_address, i, heap_allocate_Number(primitive_value));
+	}
+}
+// const global_environment = heap_Environment_extend(
+// 	frame_address,
+// 	heap_empty_Environment,
+// );
+const global_environment = heap_empty_Environment;
+
+
 // machine registers
-let OS; // JS array (stack) of words (Addresses,
-//        word-encoded literals, numbers)
+let OS; // JS array (stack) of words (Addresses, word-encoded literals, numbers)
 let PC; // JS number
 let E; // heap Address
 let RTS; // JS array (stack) of Addresses
 HEAP; // (declared above already)
 
 const microcode = {
-  LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
-  UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
-  BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
-  POP: (instr) => OS.pop(),
-  JOF: (instr) => {
-    const condition = OS.pop();
-    if (!address_to_JS_value(condition)) {
-      PC = instr.addr;
-    }
-  },
-  GOTO: (instr) => {
-    PC = instr.addr;
-  },
-
-  //   // New instructions for handling scopes and variables
-  //   ENTER_SCOPE: (instr) => {
-  //     // Push a new block frame and extend the environment with a new frame
-  //     push(RTS, heap_allocate_Blockframe(E));
-  //     const frame_address = heap_allocate_Frame(instr.num);
-  //     E = heap_Environment_extend(frame_address, E);
-  //     for (let i = 0; i < instr.num; i++) {
-  //       heap_set_child(frame_address, i, Unassigned);
-  //     }
-  //   },
-
-  //   EXIT_SCOPE: (instr) => {
-  //     // Restore environment from the block frame
-  //     E = heap_get_Blockframe_environment(RTS.pop());
-  //   },
-
-  //   LD: (instr) => {
-  //     const val = heap_get_Environment_value(E, instr.pos);
-  //     if (is_Unassigned(val)) error("access of unassigned variable");
-  //     push(OS, val);
-  //   },
-
-  //   ASSIGN: (instr) => {
-  //     heap_set_Environment_value(E, instr.pos, peek(OS, 0));
-  //   },
+    LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
+    UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
+    BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
+    POP: (instr) => OS.pop(),
+    JOF: (instr) => {
+        const condition = OS.pop();
+        if (!address_to_JS_value(condition)) {
+            PC = instr.addr;
+        }
+    },
+    GOTO: (instr) => {
+        PC = instr.addr;
+    },
+    ENTER_SCOPE: (instr) => {
+        // Push a new block frame and extend the environment with a new frame
+        push(RTS, heap_allocate_Blockframe(E));
+        const frame_address = heap_allocate_Frame(instr.num);
+        E = heap_Environment_extend(frame_address, E);
+        for (let i = 0; i < instr.num; i++) {
+            heap_set_child(frame_address, i, Unassigned);
+        }
+    },
+    EXIT_SCOPE: (instr) => {
+        // Restore environment from the block frame
+        E = heap_get_Blockframe_environment(RTS.pop());
+    },
+    LD: (instr) => {
+      const val = heap_get_Environment_value(E, instr.pos);
+      if (is_Unassigned(val)) throw new Error("access of unassigned variable");
+      push(OS, val);
+    },
+    ASSIGN: (instr) => {
+      heap_set_Environment_value(E, instr.pos, peek(OS, 0));
+    },
 
   //   LDF: (instr) => {
   //     const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
@@ -293,150 +295,11 @@ const apply_binop = (op, v2, v1) =>
     binop_microcode[op](address_to_JS_value(v1), address_to_JS_value(v2))
   );
 
-const binop_microcode = {
-  "+": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("+ expects two numbers, got: " + [x, y]);
-    }
-    return x + y;
-  },
-  "*": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("* expects two numbers, got: " + [x, y]);
-    }
-    return x * y;
-  },
-  "-": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("- expects two numbers, got: " + [x, y]);
-    }
-    return x - y;
-  },
-  "/": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("/ expects two numbers, got: " + [x, y]);
-    }
-    return x / y;
-  },
-  "%": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("% expects two numbers, got: " + [x, y]);
-    }
-    return x % y;
-  },
-  "<<": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("<< expects two numbers, got: " + [x, y]);
-    }
-    return x << y;
-  },
-  ">>": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error(">> expects two numbers, got: " + [x, y]);
-    }
-    return x >> y;
-  },
-  "&": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("& expects two numbers, got: " + [x, y]);
-    }
-    return x & y;
-  },
-  "^": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("^ expects two numbers, got: " + [x, y]);
-    }
-    return x ^ y;
-  },
-  "|": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("| expects two numbers, got: " + [x, y]);
-    }
-    return x | y;
-  },
-  "<": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("< expects two numbers, got: " + [x, y]);
-    }
-    return x < y;
-  },
-  "<=": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("<= expects two numbers, got: " + [x, y]);
-    }
-    return x <= y;
-  },
-  ">": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error("> expects two numbers, got: " + [x, y]);
-    }
-    return x > y;
-  },
-  ">=": (x, y) => {
-    if (!is_number(x) || !is_number(y)) {
-      throw new Error(">= expects two numbers, got: " + [x, y]);
-    }
-    return x >= y;
-  },
-  "==": (x, y) => {
-    // Allow equality comparison for numbers
-    if (is_number(x) && is_number(y)) {
-      return x === y;
-    }
-    // Allow equality comparison for booleans
-    if (is_boolean(x) && is_boolean(y)) {
-      return x === y;
-    }
-    throw new Error(
-      "== expects both operands to be of the same type, got: " + [x, y]
-    );
-  },
-  "!=": (x, y) => {
-    // Allow inequality comparison for numbers
-    if (is_number(x) && is_number(y)) {
-      return x !== y;
-    }
-    // Allow inequality comparison for booleans
-    if (is_boolean(x) && is_boolean(y)) {
-      return x !== y;
-    }
-    throw new Error(
-      "!= expects both operands to be of the same type, got: " + [x, y]
-    );
-  },
-  "&&": (x, y) => {
-    if (!is_boolean(x) || !is_boolean(y)) {
-      throw new Error("&& expects two booleans, got: " + [x, y]);
-    }
-    return x && y;
-  },
-  "||": (x, y) => {
-    if (!is_boolean(x) || !is_boolean(y)) {
-      throw new Error("|| expects two booleans, got: " + [x, y]);
-    }
-    return x || y;
-  },
-};
-
 const apply_unop = (op, v) => {
   const value = address_to_JS_value(v);
   return JS_value_to_address(unop_microcode[op](value));
 };
 
-const unop_microcode = {
-  "+": (x) => {
-    if (!is_number(x)) throw new Error("Unary + expects a number");
-    return x; // Unary plus is usually a no-op
-  },
-  "-": (x) => {
-    if (!is_number(x)) throw new Error("Unary - expects a number");
-    return -x;
-  },
-  "!": (x) => {
-    if (!is_boolean(x)) throw new Error("Unary ! expects a boolean");
-    return !x;
-  },
-};
 
 //
 // conversions between addresses and JS_value
@@ -473,6 +336,7 @@ const address_to_JS_value = (x) => {
 // : is_Builtin(x)
 // ? "<builtin>"
 // : "unknown word tag: " + word_to_string(x);
+
 const JS_value_to_address = (x) => {
   if (typeof x === "number") return heap_allocate_Number(x);
   if (typeof x === "boolean") return x ? True : False;
@@ -501,18 +365,4 @@ const JS_value_to_address = (x) => {
 //   )
 // : "unknown word tag: " + word_to_string(x);
 
-const is_boolean = (value: any): boolean => {
-  return typeof value === "boolean";
-};
-const is_number = (value: any): boolean => {
-  return typeof value === "number";
-};
-const is_undefined = (value: any): boolean => {
-  return value === undefined;
-};
-const is_string = (value: any): boolean => {
-  return typeof value === "string";
-};
-const is_null = (value: any): boolean => {
-  return value === null;
-};
+

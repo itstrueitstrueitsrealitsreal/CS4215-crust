@@ -65,11 +65,18 @@ async function main() {
   const evaluator = new CrustEvaluator(conductor);
 
   const chunk = `
-  if (1 > 2) {
+  {
+  y=3;
+  let y=2;
+  if (3 > 2) {    
+  let x = 0;
     3 + 4;
+    3+y;
   } else {
     5 - 6;
+    x + 2;
   }
+}
   `;
 
   await evaluator.evaluateChunk(chunk);
