@@ -11,6 +11,7 @@ statement:
 	| ifStmt
 	| whileStmt
 	| breakStmt
+	| printStmt
 	| blockStmt;
 
 // An expression statement is an expression followed by a semicolon.
@@ -43,11 +44,12 @@ breakStmt: 'break' ';';
 ifStmt: 'if' '(' expression ')' statement ('else' statement)?;
 
 // A while loop.
-whileStmt:
-	'while' '(' expression ')' statement; // not implemented yet
+whileStmt: 'while' '(' expression ')' statement;
 
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
+
+printStmt: 'println!' '(' expression? ')' ';';
 
 expression:
 	literal
@@ -65,11 +67,12 @@ expression:
 	| expression op = '|' expression // bitwise OR
 	| expression op = ('&&' | '||') expression; // logical AND/OR
 
-literal: INT | BOOL | CHAR;
+literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;
 BOOL: 'true' | 'false';
 CHAR: '\'' . '\'';
 IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+STRING: '"' ( ~["\\] | '\\' .)* '"';
 
 WS: [ \t\r\n]+ -> skip;
 COMMENT: '//' ~[\r\n]* -> skip;

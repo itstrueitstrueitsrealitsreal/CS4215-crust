@@ -66,12 +66,10 @@ async function main() {
 
   const chunk = `
   {
-    let mut i = 0;
-    while (i < 10) {
-        i += 1;
-        break;
-    }
-    i;
+    let x = "Hello, ";
+    let y = "world!";
+    let z = x + y;
+    z;
   }
   `;
 

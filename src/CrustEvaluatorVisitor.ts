@@ -331,10 +331,20 @@ export class CrustEvaluatorVisitor
 
   // Visitor for a literal.
   visitLiteral(ctx: LiteralContext): void {
-    // Literal (or identifier if you extend further)
     const text = ctx.getText();
-    const val =
-      text === "true" ? true : text === "false" ? false : parseInt(text);
+    let val;
+    if (text.startsWith('"')) {
+      // Remove the surrounding quotes. You might also need to unescape characters.
+      val = text.substring(1, text.length - 1);
+    } else if (text === "true") {
+      val = true;
+    } else if (text === "false") {
+      val = false;
+    } else if (/^[0-9]+$/.test(text)) {
+      val = parseInt(text);
+    } else {
+      throw new Error(`Unrecognized literal: ${text}`);
+    }
     this.instrs[this.wc++] = { tag: "LDC", val: val };
   }
 
