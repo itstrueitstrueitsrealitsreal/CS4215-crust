@@ -11,7 +11,9 @@ statement:
 	| ifStmt
 	| whileStmt
 	| breakStmt
-	| blockStmt;
+	| blockStmt
+	| returnStmt    
+	| functionDecl;
 
 // An expression statement is an expression followed by a semicolon.
 exprStmt: expression ';';
@@ -49,6 +51,10 @@ whileStmt:
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
 
+returnStmt: 'return' expression? ';';
+
+functionDecl: 'fn' IDENTIFIER '(' paramList? ')' blockStmt;
+
 expression:
 	literal
 	| IDENTIFIER
@@ -63,7 +69,14 @@ expression:
 	| expression op = '&' expression // bitwise AND
 	| expression op = '^' expression // bitwise XOR
 	| expression op = '|' expression // bitwise OR
-	| expression op = ('&&' | '||') expression; // logical AND/OR
+	| expression op = ('&&' | '||') expression // logical AND/OR
+	| lambdaExpr
+	| lambdaCall;
+
+lambdaExpr: '(' paramList? ')' '=>' (expression | blockStmt);
+lambdaCall: IDENTIFIER '(' argList? ')';
+paramList: IDENTIFIER (',' IDENTIFIER)*;
+argList: expression (',' expression)*;
 
 literal: INT | BOOL | CHAR;
 INT: [0-9]+;
