@@ -10,6 +10,7 @@ statement:
 	| assignmentStmt
 	| ifStmt
 	| whileStmt
+	| breakStmt
 	| blockStmt;
 
 // An expression statement is an expression followed by a semicolon.
@@ -34,6 +35,9 @@ assignOp:
 	| '&='
 	| '^='
 	| '|=';
+
+// A break statement.
+breakStmt: 'break' ';';
 
 // An if statement with optional else.
 ifStmt: 'if' '(' expression ')' statement ('else' statement)?;

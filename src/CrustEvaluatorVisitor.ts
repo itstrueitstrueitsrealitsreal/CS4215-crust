@@ -6,6 +6,7 @@ import {
   IfStmtContext,
   WhileStmtContext,
   BlockStmtContext,
+  BreakStmtContext,
   ExpressionContext,
   LiteralContext,
   AssignmentStmtContext,
@@ -19,6 +20,7 @@ export class CrustEvaluatorVisitor
 {
   private wc: number = 0;
   private instrs: any[] = [];
+  private breakTargets: number[][] = [];
 
   private compileSequence(statements: any[]): void {
     for (let i = 0; i < statements.length - 1; i++) {
@@ -154,7 +156,7 @@ export class CrustEvaluatorVisitor
 
     // Check if the variable is mutable.
     if (!this.global_compile_environment[frameIndex][valueIndex].mutable) {
-      throw new Error(`Cannot assign to immutable variable '${sym}'`);
+      throw new Error(`cannot assign twice to immutable variable '${sym}'`);
     }
 
     // Handle simple assignment.
@@ -258,17 +260,29 @@ export class CrustEvaluatorVisitor
   visitWhileStmt(ctx: WhileStmtContext): void {
     // Mark the start of the loop.
     const loopStart = this.wc;
-    // Compile the condition.
+
+    // Push a new break target list for this loop.
+    this.breakTargets.push([]);
+
+    // Compile the loop condition.
     this.visit(ctx.expression());
-    // Emit a branch instruction to exit the loop when false.
     const branchIndex = this.wc;
     this.instrs[this.wc++] = { tag: "JOF", addr: null };
+
     // Compile the loop body.
     this.visit(ctx.statement());
-    // Emit a jump instruction to go back to the loop start.
+
+    // Emit a jump to loop back.
     this.instrs[this.wc++] = { tag: "GOTO", addr: loopStart };
-    // Patch the branch to exit the loop.
+
+    // Patch the false branch of the condition to exit the loop.
     this.instrs[branchIndex].addr = this.wc;
+
+    // Patch any break instructions to jump here (immediately after the loop).
+    const breaks = this.breakTargets.pop();
+    for (const breakIndex of breaks) {
+      this.instrs[breakIndex].addr = this.wc;
+    }
   }
 
   // Visitor for an expression.
@@ -322,6 +336,17 @@ export class CrustEvaluatorVisitor
     const val =
       text === "true" ? true : text === "false" ? false : parseInt(text);
     this.instrs[this.wc++] = { tag: "LDC", val: val };
+  }
+
+  visitBreakStmt(ctx: BreakStmtContext): void {
+    if (this.breakTargets.length === 0) {
+      throw new Error("Break statement not within a loop.");
+    }
+    // Emit a GOTO with an unknown address.
+    const breakInstrIndex = this.wc;
+    this.instrs[this.wc++] = { tag: "GOTO", addr: null };
+    // Add this instruction index to the top break target list.
+    this.breakTargets[this.breakTargets.length - 1].push(breakInstrIndex);
   }
 
   // Override the default result method.
