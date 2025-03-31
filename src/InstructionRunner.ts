@@ -94,7 +94,6 @@ const heap_get_child = (address, child_index) =>
   heap_get(address + 1 + child_index);
 const heap_set_child = (address, child_index, value) =>
   heap_set(address + 1 + child_index, value);
-// access byte in heap, using address and offset
 const heap_set_byte_at_offset = (address, offset, value) =>
   HEAP.setUint8(address * word_size + offset, value);
 const heap_get_byte_at_offset = (address, offset) =>
@@ -402,6 +401,55 @@ const microcode = {
   ASSIGN: (instr) => {
     heap_set_Environment_value(E, instr.pos, peek(OS, 0));
   },
+  LDF: (instr) => {
+    const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
+    push(OS, closure_address);
+  },
+  // CALL and TAIL_CALL should be implemented following the same conventions.
+  CALL: (instr) => {
+    const arity = instr.arity;
+    const fun = peek(OS, arity);
+    //   if (is_Builtin(fun)) {
+    //     return apply_builtin(heap_get_Builtin_id(fun));
+    //   }
+    const frame_address = heap_allocate_Frame(arity);
+    for (let i = arity - 1; i >= 0; i--) {
+      heap_set_child(frame_address, i, OS.pop());
+    }
+    OS.pop(); // pop the function
+    push(RTS, heap_allocate_Callframe(E, PC));
+    E = heap_Environment_extend(
+      frame_address,
+      heap_get_Closure_environment(fun)
+    );
+    PC = heap_get_Closure_pc(fun);
+  },
+  TAIL_CALL: (instr) => {
+    const arity = instr.arity;
+    const fun = peek(OS, arity);
+    //   if (is_Builtin(fun)) {
+    //     return apply_builtin(heap_get_Builtin_id(fun));
+    //   }
+    const frame_address = heap_allocate_Frame(arity);
+    for (let i = arity - 1; i >= 0; i--) {
+      heap_set_child(frame_address, i, OS.pop());
+    }
+    OS.pop(); // pop fun
+    // No push to RTS for tail calls
+    E = heap_Environment_extend(
+      frame_address,
+      heap_get_Closure_environment(fun)
+    );
+    PC = heap_get_Closure_pc(fun);
+  },
+  RESET: (instr) => {
+    PC--;
+    const top_frame = RTS.pop();
+    if (is_Callframe(top_frame)) {
+      PC = heap_get_Callframe_pc(top_frame);
+      E = heap_get_Callframe_environment(top_frame);
+    }
+  },
   PRINT: (instr) => {
     const val = OS.pop();
     const jsVal = address_to_JS_value(val);
@@ -420,59 +468,6 @@ const microcode = {
     }
     console.log(jsVal);
   },
-
-  //   LDF: (instr) => {
-  //     const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
-  //     push(OS, closure_address);
-  //   },
-
-  //   // CALL and TAIL_CALL should be implemented following the same conventions.
-  //   CALL: (instr) => {
-  //     const arity = instr.arity;
-  //     const fun = peek(OS, arity);
-  //     if (is_Builtin(fun)) {
-  //       return apply_builtin(heap_get_Builtin_id(fun));
-  //     }
-  //     const frame_address = heap_allocate_Frame(arity);
-  //     for (let i = arity - 1; i >= 0; i--) {
-  //       heap_set_child(frame_address, i, OS.pop());
-  //     }
-  //     OS.pop(); // pop the function
-  //     push(RTS, heap_allocate_Callframe(E, PC));
-  //     E = heap_Environment_extend(
-  //       frame_address,
-  //       heap_get_Closure_environment(fun)
-  //     );
-  //     PC = heap_get_Closure_pc(fun);
-  //   },
-
-  //   TAIL_CALL: (instr) => {
-  //     const arity = instr.arity;
-  //     const fun = peek(OS, arity);
-  //     if (is_Builtin(fun)) {
-  //       return apply_builtin(heap_get_Builtin_id(fun));
-  //     }
-  //     const frame_address = heap_allocate_Frame(arity);
-  //     for (let i = arity - 1; i >= 0; i--) {
-  //       heap_set_child(frame_address, i, OS.pop());
-  //     }
-  //     OS.pop(); // pop fun
-  //     // No push to RTS for tail calls
-  //     E = heap_Environment_extend(
-  //       frame_address,
-  //       heap_get_Closure_environment(fun)
-  //     );
-  //     PC = heap_get_Closure_pc(fun);
-  //   },
-
-  //   RESET: (instr) => {
-  //     PC--;
-  //     const top_frame = RTS.pop();
-  //     if (is_Callframe(top_frame)) {
-  //       PC = heap_get_Callframe_pc(top_frame);
-  //       E = heap_get_Callframe_environment(top_frame);
-  //     }
-  //   },
 };
 
 const apply_binop = (op, v2, v1) =>

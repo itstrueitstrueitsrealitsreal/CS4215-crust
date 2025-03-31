@@ -12,9 +12,10 @@ statement:
 	| whileStmt
 	| breakStmt
 	| printStmt
-	| printStmt
 	| printlnStmt
-	| blockStmt;
+	| blockStmt
+	| returnStmt
+	| functionDecl;
 
 // An expression statement is an expression followed by a semicolon.
 exprStmt: expression ';';
@@ -63,6 +64,9 @@ printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
 printlnStmt:
 	'println!' '(' STRING (',' expression)* ')' ';'
 	| 'println!' '(' ')' ';';
+returnStmt: 'return' expression? ';';
+
+functionDecl: 'fn' IDENTIFIER '(' paramList? ')' blockStmt;
 
 expression:
 	formatExpr
@@ -79,7 +83,14 @@ expression:
 	| expression op = '&' expression // bitwise AND
 	| expression op = '^' expression // bitwise XOR
 	| expression op = '|' expression // bitwise OR
-	| expression op = ('&&' | '||') expression; // logical AND/OR
+	| expression op = ('&&' | '||') expression // logical AND/OR
+	| lambdaExpr
+	| lambdaCall;
+
+lambdaExpr: '(' paramList? ')' '=>' (expression | blockStmt);
+lambdaCall: IDENTIFIER '(' argList? ')';
+paramList: IDENTIFIER (',' IDENTIFIER)*;
+argList: expression (',' expression)*;
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;

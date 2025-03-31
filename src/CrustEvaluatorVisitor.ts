@@ -13,6 +13,10 @@ import {
   PrintStmtContext,
   PrintlnStmtContext,
   FormatExprContext,
+  LambdaExprContext,
+  LambdaCallContext,
+  ReturnStmtContext,
+  FunctionDeclContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
@@ -48,9 +52,13 @@ export class CrustEvaluatorVisitor
 
   // // compile-time frames only need synbols (keys), no values
   // const global_compile_frame = Object.keys(primitive_object);
-  private global_compile_environment: any[] = [];
+  private global_compile_environment: { name: string; mutable: boolean }[][] =
+    [];
 
-  private compile_time_environment_extend(vs: any[], e: any[]): any[] {
+  private compile_time_environment_extend(
+    vs: { name: string; mutable: boolean }[],
+    e: { name: string; mutable: boolean }[][]
+  ): { name: string; mutable: boolean }[][] {
     //  make shallow copy of e
     return push([...e], vs);
   }
@@ -304,9 +312,12 @@ export class CrustEvaluatorVisitor
         };
       } else if (ctx.getChild(0) instanceof FormatExprContext) {
         this.visit(ctx.getChild(0));
+      } else if (ctx.getChild(0) instanceof LambdaCallContext) {
+        this.visit(ctx.getChild(0) as LambdaCallContext);
+      } else if (ctx.getChild(0) instanceof LambdaExprContext) {
+        this.visit(ctx.getChild(0) as LambdaExprContext);
       } else {
-        console.log(ctx.getChild(0) instanceof FormatExprContext);
-        throw new Error(`Invalid expression: ${ctx.getText()}`);
+        throw new Error(`Invalidd expression: ${ctx.getText()}`);
       }
     } else if (ctx.getChildCount() === 2) {
       // Unary operator: e.g., '-' expression or '!' expression.
@@ -330,7 +341,7 @@ export class CrustEvaluatorVisitor
         };
       }
     } else {
-      throw new Error(`Invalid expression: ${ctx.getText()}`);
+      throw new Error(`Invaliddd expression: ${ctx.getText()}`);
     }
   }
 
@@ -459,6 +470,99 @@ export class CrustEvaluatorVisitor
 
     // Emit PRINTLN instruction which prints with a newline.
     this.instrs[this.wc++] = { tag: "PRINTLN" };
+  }
+
+  // fun: (comp, ce) => {
+  // 	compile(
+  // 		{
+  // 			tag: "const",
+  // 			sym: comp.sym,
+  // 			expr: { tag: "lam", prms: comp.prms, body: comp.body },
+  // 		},
+  // 		ce,
+  // 	);
+  // },
+  visitFunctionDecl(ctx: FunctionDeclContext): void {
+    // TODO!
+    // assign variable to closure
+    // extend environment with params
+    // visit block
+  }
+
+  visitLambdaExpr(ctx: LambdaExprContext): void {
+    const params = ctx
+      .paramList()
+      .IDENTIFIER()
+      .map((id) => ({
+        name: id.getText(),
+        mutable: false,
+      }));
+    console.log("params", params);
+    this.instrs[this.wc++] = {
+      tag: "LDF",
+      arity: ctx.paramList().IDENTIFIER().length,
+      addr: this.wc + 1,
+    };
+    const goto_instruction = { tag: "GOTO", addr: null };
+    this.instrs[this.wc++] = goto_instruction;
+    const previousEnvironment = this.global_compile_environment;
+    this.global_compile_environment = this.compile_time_environment_extend(
+      params,
+      this.global_compile_environment
+    );
+    this.showGlobalCompileEnvironment();
+    // check if the lambda expression has a block statement or an expression
+    if (ctx.expression()) {
+      this.visit(ctx.expression());
+    } else if (ctx.blockStmt()) {
+      this.visit(ctx.blockStmt());
+    }
+    this.instrs[this.wc++] = { tag: "LDC", val: undefined };
+    this.instrs[this.wc++] = { tag: "RESET" };
+    goto_instruction.addr = this.wc;
+    this.global_compile_environment = previousEnvironment;
+  }
+
+  visitLambdaCall(ctx: LambdaCallContext): void {
+    const sym = ctx.IDENTIFIER().getText();
+    this.instrs[this.wc++] = {
+      tag: "LD",
+      pos: this.compile_time_environment_position(
+        this.global_compile_environment,
+        sym
+      ),
+    };
+    const args = ctx.argList()
+      ? ctx
+          .argList()
+          .expression()
+          .map((arg) => this.visit(arg))
+      : [];
+    this.instrs[this.wc++] = {
+      tag: "CALL",
+      arity: args.length,
+    };
+  }
+
+  visitReturnStmt(ctx: ReturnStmtContext): void {
+    if (ctx.expression()) {
+      this.visit(ctx.expression());
+    } else {
+      this.instrs[this.wc++] = { tag: "LDC", val: undefined };
+    }
+    if (ctx.expression().getChild(0) instanceof LambdaCallContext) {
+      this.instrs[this.wc - 1].tag = "TAIL_CALL";
+    } else this.instrs[this.wc++] = { tag: "RESET" };
+  }
+
+  private showGlobalCompileEnvironment(): void {
+    console.log("Global compile-time environment:");
+    for (let i = 0; i < this.global_compile_environment.length; i++) {
+      console.log(`Frame ${i}:`);
+      for (const { name, mutable } of this.global_compile_environment[i]) {
+        console.log(`  ${name} (mutable: ${mutable})`);
+      }
+    }
   }
 
   // Override the default result method.
