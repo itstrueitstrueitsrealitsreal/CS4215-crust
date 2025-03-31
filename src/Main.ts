@@ -66,18 +66,15 @@ async function main() {
 
   const chunk = `
   {
-    y = 3;
     let mut y = 2;
+    let mut x = 1;
     if (3 > 2) {    
-        y = y + 1;
-        let x = 0;
-        3 + 4;
-        3 + y;
+        y += 9;
     } else {
         5 - 6;
-        // x + 2;
     }
     y;
+    x <<= 2;
   }
   `;
 

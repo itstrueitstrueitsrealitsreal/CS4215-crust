@@ -18,7 +18,22 @@ exprStmt: expression ';';
 // A variable declaration: using 'let' similar to Rust.
 varDecl: 'let' ('mut')? IDENTIFIER ('=' expression)? ';';
 
-assignmentStmt: IDENTIFIER '=' expression ';';
+// Assignment statement now supports both plain assignment and compound assignment.
+assignmentStmt: IDENTIFIER assignOp expression ';';
+
+// Define the assignment operator: a plain '=' or any of the compound assignment operators.
+assignOp:
+	'='
+	| '+='
+	| '-='
+	| '*='
+	| '/='
+	| '%='
+	| '<<='
+	| '>>='
+	| '&='
+	| '^='
+	| '|=';
 
 // An if statement with optional else.
 ifStmt: 'if' '(' expression ')' statement ('else' statement)?;

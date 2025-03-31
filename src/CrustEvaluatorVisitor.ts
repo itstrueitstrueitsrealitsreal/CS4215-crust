@@ -130,7 +130,6 @@ export class CrustEvaluatorVisitor
   // Visitor for a variable declaration:
   // 'let' IDENTIFIER ('=' expression)? ';'
   visitVarDecl(ctx: VarDeclContext): void {
-    const isMutable = ctx.getChild(1).getText() === "mut";
     const sym = ctx.IDENTIFIER().getText();
     this.visit(ctx.expression());
     this.instrs[this.wc++] = {
@@ -144,24 +143,84 @@ export class CrustEvaluatorVisitor
 
   visitAssignmentStmt(ctx: AssignmentStmtContext): void {
     const sym = ctx.IDENTIFIER().getText();
+    // Get the assignment operator (child index 1 in the parse tree)
+    const op = ctx.getChild(1).getText();
 
-    // Find the variable’s position in the environment.
+    // Find the variable's position in the compile-time environment.
     const [frameIndex, valueIndex] = this.compile_time_environment_position(
       this.global_compile_environment,
       sym
     );
 
-    // Check the mutability flag.
+    // Check if the variable is mutable.
     if (!this.global_compile_environment[frameIndex][valueIndex].mutable) {
       throw new Error(`Cannot assign to immutable variable '${sym}'`);
     }
 
-    // Evaluate the expression and generate the assignment instruction.
-    this.visit(ctx.expression());
-    this.instrs[this.wc++] = {
-      tag: "ASSIGN",
-      pos: [frameIndex, valueIndex],
-    };
+    // Handle simple assignment.
+    if (op === "=") {
+      this.visit(ctx.expression());
+      this.instrs[this.wc++] = {
+        tag: "ASSIGN",
+        pos: [frameIndex, valueIndex],
+      };
+    } else {
+      // For compound assignment (e.g., '+=', '-=', etc.):
+      // 1. Load the current value of the variable.
+      this.instrs[this.wc++] = {
+        tag: "LD",
+        pos: [frameIndex, valueIndex],
+      };
+
+      // 2. Evaluate the right-hand side expression.
+      this.visit(ctx.expression());
+
+      // 3. Determine the binary operator corresponding to the compound assignment.
+      let binop: string;
+      switch (op) {
+        case "+=":
+          binop = "+";
+          break;
+        case "-=":
+          binop = "-";
+          break;
+        case "*=":
+          binop = "*";
+          break;
+        case "/=":
+          binop = "/";
+          break;
+        case "%=":
+          binop = "%";
+          break;
+        case "<<=":
+          binop = "<<";
+          break;
+        case ">>=":
+          binop = ">>";
+          break;
+        case "&=":
+          binop = "&";
+          break;
+        case "^=":
+          binop = "^";
+          break;
+        case "|=":
+          binop = "|";
+          break;
+        default:
+          throw new Error(`Unsupported compound assignment operator: ${op}`);
+      }
+
+      // 4. Emit the binary operation instruction.
+      this.instrs[this.wc++] = { tag: "BINOP", sym: binop };
+
+      // 5. Assign the result back to the variable.
+      this.instrs[this.wc++] = {
+        tag: "ASSIGN",
+        pos: [frameIndex, valueIndex],
+      };
+    }
   }
 
   // Visitor for an if statement:
