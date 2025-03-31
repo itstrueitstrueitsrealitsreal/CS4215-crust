@@ -12,8 +12,9 @@ statement:
 	| whileStmt
 	| breakStmt
 	| printStmt
-	| blockStmt
-	| printStmt;
+	| printStmt
+	| printlnStmt
+	| blockStmt;
 
 // An expression statement is an expression followed by a semicolon.
 exprStmt: expression ';';
@@ -50,12 +51,22 @@ whileStmt: 'while' '(' expression ')' statement;
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
 
-printStmt:
+// Macros: 
+
+// format!: formats a string with arguments.
+formatExpr: 'format!' '(' STRING (',' expression)* ')';
+
+// print!: prints without a newline.
+printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
+
+// println!: prints with a newline. Also allows no arguments.
+printlnStmt:
 	'println!' '(' STRING (',' expression)* ')' ';'
 	| 'println!' '(' ')' ';';
 
 expression:
-	literal
+	formatExpr
+	| literal
 	| IDENTIFIER
 	| '(' expression ')'
 	| '-' expression // unary minus

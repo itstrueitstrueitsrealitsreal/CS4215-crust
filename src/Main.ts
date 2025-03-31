@@ -65,15 +65,21 @@ async function main() {
   const evaluator = new CrustEvaluator(conductor);
 
   const chunk = `
-  {
-    let x = "Hello, ";
-    let y = "world!";
-    let z = x + y;
-    println!("Hello, world!");
-    println!("{}", z);
-    println!("{}{}", x, y);
-    // println!(z); // should error
-  }
+{
+  let x = "Hello, ";
+  let y = "world!";
+  let z = format!("Hello, {}!", "world");
+  
+  println!("Hello, world!");
+  
+  println!("{}", z);
+  
+  println!("{}{}", x, y);
+  
+  println!("{x}{y}");
+  println!("{x}{}", y);
+}
+
   `;
 
   await evaluator.evaluateChunk(chunk);

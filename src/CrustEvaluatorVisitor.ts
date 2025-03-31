@@ -11,6 +11,8 @@ import {
   LiteralContext,
   AssignmentStmtContext,
   PrintStmtContext,
+  PrintlnStmtContext,
+  FormatExprContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
@@ -287,7 +289,6 @@ export class CrustEvaluatorVisitor
   }
 
   // Visitor for an expression.
-  // This remains similar to your previous implementation.
   visitExpression(ctx: ExpressionContext): void {
     if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
@@ -301,7 +302,10 @@ export class CrustEvaluatorVisitor
             sym
           ),
         };
+      } else if (ctx.getChild(0) instanceof FormatExprContext) {
+        this.visit(ctx.getChild(0));
       } else {
+        console.log(ctx.getChild(0) instanceof FormatExprContext);
         throw new Error(`Invalid expression: ${ctx.getText()}`);
       }
     } else if (ctx.getChildCount() === 2) {
@@ -359,44 +363,102 @@ export class CrustEvaluatorVisitor
     // Add this instruction index to the top break target list.
     this.breakTargets[this.breakTargets.length - 1].push(breakInstrIndex);
   }
+  visitFormatExpr(ctx: FormatExprContext): void {
+    console.log("Visiting formatExpr: " + ctx.getText());
+    const fmtToken = ctx.STRING().getText();
+    const formatStr = fmtToken.substring(1, fmtToken.length - 1);
+    const exprs = ctx.expression();
+
+    // Load the format string and expressions onto the stack and combine them
+    this.compileTemplate(formatStr, exprs);
+
+    // No need to push a "PRINT" instruction here since format! just returns a string
+    // The result of format! is already on the stack
+  }
+
+  private compileTemplate(formatStr: string, exprs: ExpressionContext[]): void {
+    // Regular expression to capture placeholders like {…}
+    const re = /\{([^}]*)\}/g;
+    let lastIndex = 0;
+    const literalParts: string[] = [];
+    const placeholders: string[] = [];
+
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(formatStr)) !== null) {
+      literalParts.push(formatStr.substring(lastIndex, match.index));
+      placeholders.push(match[1].trim());
+      lastIndex = re.lastIndex;
+    }
+    literalParts.push(formatStr.substring(lastIndex));
+
+    // If there are no placeholders, just load the literal.
+    if (placeholders.length === 0) {
+      this.instrs[this.wc++] = { tag: "LDC", val: formatStr };
+      return;
+    }
+
+    // 1. Load the first literal part.
+    this.instrs[this.wc++] = { tag: "LDC", val: literalParts[0] };
+
+    // 2. For each placeholder, process it.
+    let posCounter = 0;
+    for (let i = 0; i < placeholders.length; i++) {
+      const ph = placeholders[i];
+      if (ph === "") {
+        // Positional placeholder: compile the next expression.
+        if (posCounter >= exprs.length) {
+          throw new Error("Not enough arguments for positional placeholder");
+        }
+        this.visit(exprs[posCounter]);
+        posCounter++;
+      } else {
+        // Named placeholder: load the variable from the environment.
+        this.instrs[this.wc++] = {
+          tag: "LD",
+          pos: this.compile_time_environment_position(
+            this.global_compile_environment,
+            ph
+          ),
+        };
+      }
+      // Concatenate the placeholder's value.
+      this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
+      // Load the next literal part.
+      this.instrs[this.wc++] = { tag: "LDC", val: literalParts[i + 1] };
+      // Concatenate.
+      this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
+    }
+  }
 
   visitPrintStmt(ctx: PrintStmtContext): void {
+    // Process the format string and expressions
+    const fmtToken = ctx.STRING().getText();
+    const formatStr = fmtToken.substring(1, fmtToken.length - 1);
+    const exprs = ctx.expression();
+
+    // Compile the format string with expressions
+    this.compileTemplate(formatStr, exprs);
+
+    // Emit an instruction to print without a newline.
+    this.instrs[this.wc++] = { tag: "PRINT" };
+  }
+
+  visitPrintlnStmt(ctx: PrintlnStmtContext): void {
     if (ctx.STRING()) {
-      // Get the format literal text (including quotes)
+      // If there's a format string, process it with expressions
       const fmtToken = ctx.STRING().getText();
-      // Remove the surrounding quotes (you might want to handle escapes later)
       const formatStr = fmtToken.substring(1, fmtToken.length - 1);
-      // Split the format string on the placeholder "{}"
-      const parts = formatStr.split("{}");
-      // Get the substitution expressions (if any)
       const exprs = ctx.expression();
 
-      // If there are no substitution expressions, just load the literal.
-      if (exprs.length === 0) {
-        this.instrs[this.wc++] = { tag: "LDC", val: formatStr };
-      } else {
-        // Begin with the first literal part.
-        this.instrs[this.wc++] = { tag: "LDC", val: parts[0] };
-        // For each substitution, evaluate the expression and concatenate with the next literal part.
-        for (let i = 0; i < exprs.length; i++) {
-          // Evaluate the i-th substitution expression.
-          this.visit(exprs[i]);
-          // Concatenate the result with the current string.
-          this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
-          // Load the next literal part (if not present, use an empty string)
-          const nextLiteral = parts[i + 1] !== undefined ? parts[i + 1] : "";
-          this.instrs[this.wc++] = { tag: "LDC", val: nextLiteral };
-          // Concatenate again.
-          this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
-        }
-      }
-      // Finally, emit the PRINTLN instruction.
-      this.instrs[this.wc++] = { tag: "PRINTLN" };
+      // Compile the format string with expressions
+      this.compileTemplate(formatStr, exprs);
     } else {
-      // Optionally, you can allow println! with an expression, or throw an error.
-      // Here we throw an error:
-      throw new Error(`format argument must be a string literal`);
+      // If no argument is provided, load an empty string.
+      this.instrs[this.wc++] = { tag: "LDC", val: "" };
     }
+
+    // Emit PRINTLN instruction which prints with a newline.
+    this.instrs[this.wc++] = { tag: "PRINTLN" };
   }
 
   // Override the default result method.

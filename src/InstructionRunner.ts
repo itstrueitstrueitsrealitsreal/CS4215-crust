@@ -402,11 +402,21 @@ const microcode = {
   ASSIGN: (instr) => {
     heap_set_Environment_value(E, instr.pos, peek(OS, 0));
   },
+  PRINT: (instr) => {
+    const val = OS.pop();
+    const jsVal = address_to_JS_value(val);
+    // Optionally, check that jsVal is a string.
+    if (typeof jsVal !== "string") {
+      throw new Error("print! expects a string");
+    }
+    // Print without a newline:
+    process.stdout.write(jsVal); // Node.js; or use console.log with adjustments.
+  },
   PRINTLN: (instr) => {
     const val = OS.pop();
     const jsVal = address_to_JS_value(val);
     if (typeof jsVal !== "string") {
-      throw new Error("println expects a string");
+      throw new Error("println! expects a string");
     }
     console.log(jsVal);
   },
