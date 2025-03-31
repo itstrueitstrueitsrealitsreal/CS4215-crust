@@ -4,14 +4,19 @@ grammar Crust;
 prog: (statement)+ EOF;
 
 // A statement can be an expression statement, variable declaration, if, while, or block.
-statement: exprStmt | varDecl | assignmentStmt | ifStmt | whileStmt | blockStmt;
+statement:
+	exprStmt
+	| varDecl
+	| assignmentStmt
+	| ifStmt
+	| whileStmt
+	| blockStmt;
 
 // An expression statement is an expression followed by a semicolon.
 exprStmt: expression ';';
 
 // A variable declaration: using 'let' similar to Rust.
-varDecl:
-	'let' IDENTIFIER ('=' expression)? ';'; // not implemented yet
+varDecl: 'let' ('mut')? IDENTIFIER ('=' expression)? ';';
 
 assignmentStmt: IDENTIFIER '=' expression ';';
 
