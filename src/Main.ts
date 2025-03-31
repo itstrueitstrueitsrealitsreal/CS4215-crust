@@ -66,17 +66,13 @@ async function main() {
 
   const chunk = `
   {
-  y=3;
-  let y=2;
-  if (3 > 2) {    
-  let x = 0;
-    3 + 4;
-    3+y;
-  } else {
-    5 - 6;
-    x + 2;
+    let mut i = 0;
+    while (i < 10) {
+        i += 1;
+        break;
+    }
+    i;
   }
-}
   `;
 
   await evaluator.evaluateChunk(chunk);
