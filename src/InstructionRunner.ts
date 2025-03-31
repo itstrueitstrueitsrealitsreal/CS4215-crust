@@ -15,7 +15,7 @@ export function run(instrs: any[]): any {
     //print_OS("\noperands:            ");
     //print_RTS("\nRTS:            ");
     const instr = instrs[PC++];
-    //display(instrs[PC].tag, "next instruction: ")
+    // console.log(instr);
     microcode[instr.tag](instr);
   }
   //display(OS, "\nfinal operands:           ")
@@ -95,19 +95,35 @@ const heap_get_size = (address) => HEAP.getUint16(address * word_size + size_off
 // child index starts at 0
 const heap_get_child = (address, child_index) => heap_get(address + 1 + child_index);
 const heap_set_child = (address, child_index, value) => heap_set(address + 1 + child_index, value);
-// access byte in heap, using address and offset
 const heap_set_byte_at_offset = (address, offset, value) => HEAP.setUint8(address * word_size + offset, value);
+const heap_get_byte_at_offset = (address, offset) => HEAP.getUint8(address * word_size + offset);
+const heap_set_2_bytes_at_offset = (address, offset, value) => HEAP.setUint16(address * word_size + offset, value);
+const heap_get_2_bytes_at_offset = (address, offset) => HEAP.getUint16(address * word_size + offset);
 
 const heap_allocate_Number = (n) => {
   const number_address = heap_allocate(Number_tag, 2); // 2 words
   heap_set(number_address + 1, n); // store in next word
   return number_address;
 };
+const is_Builtin = (address) => heap_get_tag(address) === Builtin_tag;
 const heap_allocate_Builtin = (id) => {
 	const address = heap_allocate(Builtin_tag, 1);
 	heap_set_byte_at_offset(address, 1, id);
 	return address;
 };
+const heap_get_Builtin_id = (address) => heap_get_byte_at_offset(address, 1);
+// closure [1 byte tag, 1 byte arity, 2 bytes pc, 1 byte unused, 2 bytes #children, 1 byte unused] followed by the address of env
+// note: currently bytes at offset 4 and 7 are not used; they could be used to increase pc and #children range
+const heap_allocate_Closure = (arity, pc, env) => {
+	const address = heap_allocate(Closure_tag, 2);
+	heap_set_byte_at_offset(address, 1, arity);
+	heap_set_2_bytes_at_offset(address, 2, pc);
+	heap_set(address + 1, env);
+	return address;
+};
+const heap_get_Closure_arity = (address) => heap_get_byte_at_offset(address, 1);
+const heap_get_Closure_pc = (address) => heap_get_2_bytes_at_offset(address, 2);
+const heap_get_Closure_environment = (address) => heap_get_child(address, 0);
 // block frame [1 byte tag, 4 bytes unused, 2 bytes #children, 1 byte unused]
 const heap_allocate_Blockframe = (env) => {
 	const address = heap_allocate(Blockframe_tag, 2);
@@ -115,6 +131,17 @@ const heap_allocate_Blockframe = (env) => {
 	return address;
 };
 const heap_get_Blockframe_environment = (address) => heap_get_child(address, 0);
+// call frame [1 byte tag, 1 byte unused, 2 bytes pc, 1 byte unused, 2 bytes #children, 1 byte unused]
+// followed by the address of env
+const heap_allocate_Callframe = (env, pc) => {
+	const address = heap_allocate(Callframe_tag, 2);
+	heap_set_2_bytes_at_offset(address, 2, pc);
+	heap_set(address + 1, env);
+	return address;
+};
+const heap_get_Callframe_environment = (address) => heap_get_child(address, 0);
+const heap_get_Callframe_pc = (address) => heap_get_2_bytes_at_offset(address, 2);
+const is_Callframe = (address) => heap_get_tag(address) === Callframe_tag;
 // environment frame [1 byte tag, 4 bytes unused, 2 bytes #children, 1 byte unused] followed by the addresses of its values
 const heap_allocate_Frame = (number_of_values) => heap_allocate(Frame_tag, number_of_values + 1);
 // environment [1 byte tag, 4 bytes unused, 2 bytes #children, 1 byte unused] followed by the addresses of its frames
@@ -235,59 +262,55 @@ const microcode = {
     ASSIGN: (instr) => {
       heap_set_Environment_value(E, instr.pos, peek(OS, 0));
     },
-
-  //   LDF: (instr) => {
-  //     const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
-  //     push(OS, closure_address);
-  //   },
-
-  //   // CALL and TAIL_CALL should be implemented following the same conventions.
-  //   CALL: (instr) => {
-  //     const arity = instr.arity;
-  //     const fun = peek(OS, arity);
-  //     if (is_Builtin(fun)) {
-  //       return apply_builtin(heap_get_Builtin_id(fun));
-  //     }
-  //     const frame_address = heap_allocate_Frame(arity);
-  //     for (let i = arity - 1; i >= 0; i--) {
-  //       heap_set_child(frame_address, i, OS.pop());
-  //     }
-  //     OS.pop(); // pop the function
-  //     push(RTS, heap_allocate_Callframe(E, PC));
-  //     E = heap_Environment_extend(
-  //       frame_address,
-  //       heap_get_Closure_environment(fun)
-  //     );
-  //     PC = heap_get_Closure_pc(fun);
-  //   },
-
-  //   TAIL_CALL: (instr) => {
-  //     const arity = instr.arity;
-  //     const fun = peek(OS, arity);
-  //     if (is_Builtin(fun)) {
-  //       return apply_builtin(heap_get_Builtin_id(fun));
-  //     }
-  //     const frame_address = heap_allocate_Frame(arity);
-  //     for (let i = arity - 1; i >= 0; i--) {
-  //       heap_set_child(frame_address, i, OS.pop());
-  //     }
-  //     OS.pop(); // pop fun
-  //     // No push to RTS for tail calls
-  //     E = heap_Environment_extend(
-  //       frame_address,
-  //       heap_get_Closure_environment(fun)
-  //     );
-  //     PC = heap_get_Closure_pc(fun);
-  //   },
-
-  //   RESET: (instr) => {
-  //     PC--;
-  //     const top_frame = RTS.pop();
-  //     if (is_Callframe(top_frame)) {
-  //       PC = heap_get_Callframe_pc(top_frame);
-  //       E = heap_get_Callframe_environment(top_frame);
-  //     }
-  //   },
+    LDF: (instr) => {
+        const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
+        push(OS, closure_address);
+    },
+    // CALL and TAIL_CALL should be implemented following the same conventions.
+    CALL: (instr) => {
+      const arity = instr.arity;
+      const fun = peek(OS, arity);
+    //   if (is_Builtin(fun)) {
+    //     return apply_builtin(heap_get_Builtin_id(fun));
+    //   }
+      const frame_address = heap_allocate_Frame(arity);
+      for (let i = arity - 1; i >= 0; i--) {
+        heap_set_child(frame_address, i, OS.pop());
+      }
+      OS.pop(); // pop the function
+      push(RTS, heap_allocate_Callframe(E, PC));
+      E = heap_Environment_extend(
+        frame_address,
+        heap_get_Closure_environment(fun)
+      );
+      PC = heap_get_Closure_pc(fun);
+    },
+    TAIL_CALL: (instr) => {
+      const arity = instr.arity;
+      const fun = peek(OS, arity);
+    //   if (is_Builtin(fun)) {
+    //     return apply_builtin(heap_get_Builtin_id(fun));
+    //   }
+      const frame_address = heap_allocate_Frame(arity);
+      for (let i = arity - 1; i >= 0; i--) {
+        heap_set_child(frame_address, i, OS.pop());
+      }
+      OS.pop(); // pop fun
+      // No push to RTS for tail calls
+      E = heap_Environment_extend(
+        frame_address,
+        heap_get_Closure_environment(fun)
+      );
+      PC = heap_get_Closure_pc(fun);
+    },
+    RESET: (instr) => {
+      PC--;
+      const top_frame = RTS.pop();
+      if (is_Callframe(top_frame)) {
+        PC = heap_get_Callframe_pc(top_frame);
+        E = heap_get_Callframe_environment(top_frame);
+      }
+    },
 };
 
 const apply_binop = (op, v2, v1) =>
