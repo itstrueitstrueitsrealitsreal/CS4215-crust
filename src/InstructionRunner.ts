@@ -9,21 +9,15 @@ export function run(instrs: any[]): any {
   PC = 0;
   E = global_environment;
   RTS = [];
-  stringPool = {}; // ADDED CHANGE
-  //print_code()
+  stringPool = {}; // Reset string pool for this run
+
   while (!(instrs[PC].tag === "DONE")) {
-    //heap_display()
-    //display(PC, "PC: ")
-    //display(instrs[PC].tag, "instr: ")
-    //print_OS("\noperands:            ");
-    //print_RTS("\nRTS:            ");
     const instr = instrs[PC++];
-    //display(instrs[PC].tag, "next instruction: ")
     microcode[instr.tag](instr);
   }
-  //display(OS, "\nfinal operands:           ")
-  //print_OS()
-  return address_to_JS_value(peek(OS, 0));
+  // If the operand stack is empty, return undefined; otherwise, convert the top value.
+  const top = peek(OS, 0);
+  return top === undefined ? undefined : address_to_JS_value(top);
 }
 
 // return the last element of given array without changing the array
@@ -407,6 +401,14 @@ const microcode = {
   },
   ASSIGN: (instr) => {
     heap_set_Environment_value(E, instr.pos, peek(OS, 0));
+  },
+  PRINTLN: (instr) => {
+    const val = OS.pop();
+    const jsVal = address_to_JS_value(val);
+    if (typeof jsVal !== "string") {
+      throw new Error("println expects a string");
+    }
+    console.log(jsVal);
   },
 
   //   LDF: (instr) => {

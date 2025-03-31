@@ -10,6 +10,7 @@ import {
   ExpressionContext,
   LiteralContext,
   AssignmentStmtContext,
+  PrintStmtContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
@@ -357,6 +358,45 @@ export class CrustEvaluatorVisitor
     this.instrs[this.wc++] = { tag: "GOTO", addr: null };
     // Add this instruction index to the top break target list.
     this.breakTargets[this.breakTargets.length - 1].push(breakInstrIndex);
+  }
+
+  visitPrintStmt(ctx: PrintStmtContext): void {
+    if (ctx.STRING()) {
+      // Get the format literal text (including quotes)
+      const fmtToken = ctx.STRING().getText();
+      // Remove the surrounding quotes (you might want to handle escapes later)
+      const formatStr = fmtToken.substring(1, fmtToken.length - 1);
+      // Split the format string on the placeholder "{}"
+      const parts = formatStr.split("{}");
+      // Get the substitution expressions (if any)
+      const exprs = ctx.expression();
+
+      // If there are no substitution expressions, just load the literal.
+      if (exprs.length === 0) {
+        this.instrs[this.wc++] = { tag: "LDC", val: formatStr };
+      } else {
+        // Begin with the first literal part.
+        this.instrs[this.wc++] = { tag: "LDC", val: parts[0] };
+        // For each substitution, evaluate the expression and concatenate with the next literal part.
+        for (let i = 0; i < exprs.length; i++) {
+          // Evaluate the i-th substitution expression.
+          this.visit(exprs[i]);
+          // Concatenate the result with the current string.
+          this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
+          // Load the next literal part (if not present, use an empty string)
+          const nextLiteral = parts[i + 1] !== undefined ? parts[i + 1] : "";
+          this.instrs[this.wc++] = { tag: "LDC", val: nextLiteral };
+          // Concatenate again.
+          this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
+        }
+      }
+      // Finally, emit the PRINTLN instruction.
+      this.instrs[this.wc++] = { tag: "PRINTLN" };
+    } else {
+      // Optionally, you can allow println! with an expression, or throw an error.
+      // Here we throw an error:
+      throw new Error(`format argument must be a string literal`);
+    }
   }
 
   // Override the default result method.

@@ -69,7 +69,10 @@ async function main() {
     let x = "Hello, ";
     let y = "world!";
     let z = x + y;
-    z;
+    println!("Hello, world!");
+    println!("{}", z);
+    println!("{}{}", x, y);
+    // println!(z); // should error
   }
   `;
 

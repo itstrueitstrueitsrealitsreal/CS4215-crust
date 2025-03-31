@@ -12,7 +12,8 @@ statement:
 	| whileStmt
 	| breakStmt
 	| printStmt
-	| blockStmt;
+	| blockStmt
+	| printStmt;
 
 // An expression statement is an expression followed by a semicolon.
 exprStmt: expression ';';
@@ -49,7 +50,9 @@ whileStmt: 'while' '(' expression ')' statement;
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
 
-printStmt: 'println!' '(' expression? ')' ';';
+printStmt:
+	'println!' '(' STRING (',' expression)* ')' ';'
+	| 'println!' '(' ')' ';';
 
 expression:
 	literal
