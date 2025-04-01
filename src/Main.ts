@@ -64,7 +64,7 @@ async function main() {
   const conductor = new MockConductor();
   const evaluator = new CrustEvaluator(conductor);
 
-const chunk = `{
+  const chunk = `{
 let fact = (n) => {
   return fact_iter(n, 1, 1);
 }

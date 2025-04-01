@@ -10,6 +10,9 @@ import {
   ExpressionContext,
   LiteralContext,
   AssignmentStmtContext,
+  PrintStmtContext,
+  PrintlnStmtContext,
+  FormatExprContext,
   LambdaExprContext,
   LambdaCallContext,
   ReturnStmtContext,
@@ -49,7 +52,8 @@ export class CrustEvaluatorVisitor
 
   // // compile-time frames only need synbols (keys), no values
   // const global_compile_frame = Object.keys(primitive_object);
-  private global_compile_environment: { name: string; mutable: boolean }[][] = [];
+  private global_compile_environment: { name: string; mutable: boolean }[][] =
+    [];
 
   private compile_time_environment_extend(
     vs: { name: string; mutable: boolean }[],
@@ -293,7 +297,6 @@ export class CrustEvaluatorVisitor
   }
 
   // Visitor for an expression.
-  // This remains similar to your previous implementation.
   visitExpression(ctx: ExpressionContext): void {
     if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
@@ -307,9 +310,11 @@ export class CrustEvaluatorVisitor
             sym
           ),
         };
-      } else if ((ctx.getChild(0) instanceof LambdaCallContext)) {
+      } else if (ctx.getChild(0) instanceof FormatExprContext) {
+        this.visit(ctx.getChild(0));
+      } else if (ctx.getChild(0) instanceof LambdaCallContext) {
         this.visit(ctx.getChild(0) as LambdaCallContext);
-      } else if ((ctx.getChild(0) instanceof LambdaExprContext)) {
+      } else if (ctx.getChild(0) instanceof LambdaExprContext) {
         this.visit(ctx.getChild(0) as LambdaExprContext);
       } else {
         throw new Error(`Invalidd expression: ${ctx.getText()}`);
@@ -342,10 +347,20 @@ export class CrustEvaluatorVisitor
 
   // Visitor for a literal.
   visitLiteral(ctx: LiteralContext): void {
-    // Literal (or identifier if you extend further)
     const text = ctx.getText();
-    const val =
-      text === "true" ? true : text === "false" ? false : parseInt(text);
+    let val;
+    if (text.startsWith('"')) {
+      // Remove the surrounding quotes. You might also need to unescape characters.
+      val = text.substring(1, text.length - 1);
+    } else if (text === "true") {
+      val = true;
+    } else if (text === "false") {
+      val = false;
+    } else if (/^[0-9]+$/.test(text)) {
+      val = parseInt(text);
+    } else {
+      throw new Error(`Unrecognized literal: ${text}`);
+    }
     this.instrs[this.wc++] = { tag: "LDC", val: val };
   }
 
@@ -359,17 +374,114 @@ export class CrustEvaluatorVisitor
     // Add this instruction index to the top break target list.
     this.breakTargets[this.breakTargets.length - 1].push(breakInstrIndex);
   }
+  visitFormatExpr(ctx: FormatExprContext): void {
+    console.log("Visiting formatExpr: " + ctx.getText());
+    const fmtToken = ctx.STRING().getText();
+    const formatStr = fmtToken.substring(1, fmtToken.length - 1);
+    const exprs = ctx.expression();
 
-	// fun: (comp, ce) => {
-	// 	compile(
-	// 		{
-	// 			tag: "const",
-	// 			sym: comp.sym,
-	// 			expr: { tag: "lam", prms: comp.prms, body: comp.body },
-	// 		},
-	// 		ce,
-	// 	);
-	// },
+    // Load the format string and expressions onto the stack and combine them
+    this.compileTemplate(formatStr, exprs);
+
+    // No need to push a "PRINT" instruction here since format! just returns a string
+    // The result of format! is already on the stack
+  }
+
+  private compileTemplate(formatStr: string, exprs: ExpressionContext[]): void {
+    // Regular expression to capture placeholders like {…}
+    const re = /\{([^}]*)\}/g;
+    let lastIndex = 0;
+    const literalParts: string[] = [];
+    const placeholders: string[] = [];
+
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(formatStr)) !== null) {
+      literalParts.push(formatStr.substring(lastIndex, match.index));
+      placeholders.push(match[1].trim());
+      lastIndex = re.lastIndex;
+    }
+    literalParts.push(formatStr.substring(lastIndex));
+
+    // If there are no placeholders, just load the literal.
+    if (placeholders.length === 0) {
+      this.instrs[this.wc++] = { tag: "LDC", val: formatStr };
+      return;
+    }
+
+    // 1. Load the first literal part.
+    this.instrs[this.wc++] = { tag: "LDC", val: literalParts[0] };
+
+    // 2. For each placeholder, process it.
+    let posCounter = 0;
+    for (let i = 0; i < placeholders.length; i++) {
+      const ph = placeholders[i];
+      if (ph === "") {
+        // Positional placeholder: compile the next expression.
+        if (posCounter >= exprs.length) {
+          throw new Error("Not enough arguments for positional placeholder");
+        }
+        this.visit(exprs[posCounter]);
+        posCounter++;
+      } else {
+        // Named placeholder: load the variable from the environment.
+        this.instrs[this.wc++] = {
+          tag: "LD",
+          pos: this.compile_time_environment_position(
+            this.global_compile_environment,
+            ph
+          ),
+        };
+      }
+      // Concatenate the placeholder's value.
+      this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
+      // Load the next literal part.
+      this.instrs[this.wc++] = { tag: "LDC", val: literalParts[i + 1] };
+      // Concatenate.
+      this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
+    }
+  }
+
+  visitPrintStmt(ctx: PrintStmtContext): void {
+    // Process the format string and expressions
+    const fmtToken = ctx.STRING().getText();
+    const formatStr = fmtToken.substring(1, fmtToken.length - 1);
+    const exprs = ctx.expression();
+
+    // Compile the format string with expressions
+    this.compileTemplate(formatStr, exprs);
+
+    // Emit an instruction to print without a newline.
+    this.instrs[this.wc++] = { tag: "PRINT" };
+  }
+
+  visitPrintlnStmt(ctx: PrintlnStmtContext): void {
+    if (ctx.STRING()) {
+      // If there's a format string, process it with expressions
+      const fmtToken = ctx.STRING().getText();
+      const formatStr = fmtToken.substring(1, fmtToken.length - 1);
+      const exprs = ctx.expression();
+
+      // Compile the format string with expressions
+      this.compileTemplate(formatStr, exprs);
+    } else {
+      // If no argument is provided, load an empty string.
+      this.instrs[this.wc++] = { tag: "LDC", val: "" };
+    }
+
+    // Emit PRINTLN instruction which prints with a newline.
+    this.instrs[this.wc++] = { tag: "PRINTLN" };
+  }
+
+  // fun: (comp, ce) => {
+  // 	compile(
+  // 		{
+  // 			tag: "const",
+  // 			sym: comp.sym,
+  // 			expr: { tag: "lam", prms: comp.prms, body: comp.body },
+  // 		},
+  // 		ce,
+  // 	);
+  // },
   visitFunctionDecl(ctx: FunctionDeclContext): void {
     // TODO!
     // assign variable to closure
@@ -378,12 +490,19 @@ export class CrustEvaluatorVisitor
   }
 
   visitLambdaExpr(ctx: LambdaExprContext): void {
-    const params = ctx.paramList().IDENTIFIER().map((id) => ({
-      name: id.getText(),
-      mutable: false,
-    }));
+    const params = ctx
+      .paramList()
+      .IDENTIFIER()
+      .map((id) => ({
+        name: id.getText(),
+        mutable: false,
+      }));
     console.log("params", params);
-    this.instrs[this.wc++] = { tag: "LDF", arity: ctx.paramList().IDENTIFIER().length, addr: this.wc + 1 };
+    this.instrs[this.wc++] = {
+      tag: "LDF",
+      arity: ctx.paramList().IDENTIFIER().length,
+      addr: this.wc + 1,
+    };
     const goto_instruction = { tag: "GOTO", addr: null };
     this.instrs[this.wc++] = goto_instruction;
     const previousEnvironment = this.global_compile_environment;
@@ -403,25 +522,28 @@ export class CrustEvaluatorVisitor
     goto_instruction.addr = this.wc;
     this.global_compile_environment = previousEnvironment;
   }
-  
+
   visitLambdaCall(ctx: LambdaCallContext): void {
     const sym = ctx.IDENTIFIER().getText();
-        this.instrs[this.wc++] = {
-          tag: "LD",
-          pos: this.compile_time_environment_position(
-            this.global_compile_environment,
-            sym
-          ),
-        };
+    this.instrs[this.wc++] = {
+      tag: "LD",
+      pos: this.compile_time_environment_position(
+        this.global_compile_environment,
+        sym
+      ),
+    };
     const args = ctx.argList()
-      ? ctx.argList().expression().map((arg) => this.visit(arg))
+      ? ctx
+          .argList()
+          .expression()
+          .map((arg) => this.visit(arg))
       : [];
     this.instrs[this.wc++] = {
       tag: "CALL",
       arity: args.length,
     };
   }
-  
+
   visitReturnStmt(ctx: ReturnStmtContext): void {
     if (ctx.expression()) {
       this.visit(ctx.expression());
@@ -430,10 +552,8 @@ export class CrustEvaluatorVisitor
     }
     if (ctx.expression().getChild(0) instanceof LambdaCallContext) {
       this.instrs[this.wc - 1].tag = "TAIL_CALL";
-    } else
-      this.instrs[this.wc++] = { tag: "RESET" };
+    } else this.instrs[this.wc++] = { tag: "RESET" };
   }
-
 
   private showGlobalCompileEnvironment(): void {
     console.log("Global compile-time environment:");
