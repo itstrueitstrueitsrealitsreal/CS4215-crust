@@ -61,27 +61,26 @@ class MockConductor implements IRunnerPlugin {
 }
 
 async function main() {
-  const conductor = new MockConductor();
-  const evaluator = new CrustEvaluator(conductor);
+    const conductor = new MockConductor();
+    const evaluator = new CrustEvaluator(conductor);
 
-const chunk = `{
-    let fact_iter = |n, i, acc| {
-        if i > n {
-            return acc;
-        } else {
-            return fact_iter(n, i + 1, acc * i);
-        }
-    };
-    let fact = |n| {
-        return fact_iter(n, 1, 1);
-    };
+    const chunk = `{
+        let fact_iter = |n, i, acc| {
+            if i > n {
+                return acc;
+            } else {
+                return fact_iter(n, i + 1, acc * i);
+            }
+        };
+        let fact = |n| {
+            return fact_iter(n, 1, 1);
+        };
+        fact(4);
+    }`;
 
-    fact(4);
-}`;
-
-  await evaluator.evaluateChunk(chunk);
+    await evaluator.evaluateChunk(chunk);
 }
 
 main().catch((error) => {
-  console.error("An error occurred:", error);
+    console.error("An error occurred:", error);
 });

@@ -11,8 +11,10 @@ statement:
 	| ifStmt
 	| whileStmt
 	| breakStmt
+	| printStmt
+	| printlnStmt
 	| blockStmt
-	| returnStmt    
+	| returnStmt
 	| functionDecl;
 
 // An expression statement is an expression followed by a semicolon.
@@ -45,18 +47,30 @@ breakStmt: 'break' ';';
 ifStmt: 'if' '(' expression ')' statement ('else' statement)?;
 
 // A while loop.
-whileStmt:
-	'while' '(' expression ')' statement; // not implemented yet
+whileStmt: 'while' '(' expression ')' statement;
 
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
 
+// Macros: 
+
+// format!: formats a string with arguments.
+formatExpr: 'format!' '(' STRING (',' expression)* ')';
+
+// print!: prints without a newline.
+printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
+
+// println!: prints with a newline. Also allows no arguments.
+printlnStmt:
+	'println!' '(' STRING (',' expression)* ')' ';'
+	| 'println!' '(' ')' ';';
 returnStmt: 'return' expression? ';';
 
 functionDecl: 'fn' IDENTIFIER '(' paramList? ')' blockStmt;
 
 expression:
-	literal
+	formatExpr
+	| literal
 	| IDENTIFIER
 	| '(' expression ')'
 	| '-' expression // unary minus
@@ -78,11 +92,12 @@ lambdaCall: IDENTIFIER '(' argList? ')';
 paramList: IDENTIFIER (',' IDENTIFIER)*;
 argList: expression (',' expression)*;
 
-literal: INT | BOOL | CHAR;
+literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;
 BOOL: 'true' | 'false';
 CHAR: '\'' . '\'';
 IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+STRING: '"' ( ~["\\] | '\\' .)* '"';
 
 WS: [ \t\r\n]+ -> skip;
 COMMENT: '//' ~[\r\n]* -> skip;
