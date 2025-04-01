@@ -17,6 +17,7 @@ import {
   LambdaCallContext,
   ReturnStmtContext,
   FunctionDeclContext,
+  ParamListContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
@@ -65,19 +66,19 @@ export class CrustEvaluatorVisitor
 
   private scan(ctx: BlockStmtContext): { name: string; mutable: boolean }[] {
     const locals: { name: string; mutable: boolean }[] = [];
-    const declaredVariables = new Set<string>(); // Use a Set to detect duplicates
-
+    const declaredSymbols = new Set<string>(); // Use a Set to detect duplicates
+  
     for (const statementCtx of ctx.statement()) {
+      // Handle variable declarations
       if (statementCtx.getChild(0) instanceof VarDeclContext) {
         const varDeclContext = statementCtx.getChild(0) as VarDeclContext;
         const variableName = varDeclContext.IDENTIFIER().getText();
-
-        if (declaredVariables.has(variableName)) {
-          throw new Error(`Duplicate variable declaration: '${variableName}'`);
+  
+        if (declaredSymbols.has(variableName)) {
+          throw new Error(`Duplicate declared symbol: '${variableName}'`);
         }
-
-        declaredVariables.add(variableName);
-
+        declaredSymbols.add(variableName);
+  
         // Determine mutability. For example, if the second child is "mut", mark as mutable.
         let isMutable = false;
         if (
@@ -88,7 +89,20 @@ export class CrustEvaluatorVisitor
         }
         locals.push({ name: variableName, mutable: isMutable });
       }
+      // Handle function declarations
+      else if (statementCtx.getChild(0) instanceof FunctionDeclContext) {
+        const functionDeclContext = statementCtx.getChild(0) as FunctionDeclContext;
+        const functionName = functionDeclContext.IDENTIFIER().getText();
+  
+        if (declaredSymbols.has(functionName)) {
+          throw new Error(`Duplicate declared symbol: '${functionName}'`);
+        }
+        declaredSymbols.add(functionName);
+
+        locals.push({ name: functionName, mutable: false }); // Functions are immutable by default
+      }
     }
+  
     console.log("locals", locals);
     return locals;
   }
@@ -483,43 +497,73 @@ export class CrustEvaluatorVisitor
   // 	);
   // },
   visitFunctionDecl(ctx: FunctionDeclContext): void {
-    // TODO!
-    // assign variable to closure
-    // extend environment with params
-    // visit block
+    const functionName = ctx.IDENTIFIER().getText();
+    const paramList = ctx.paramList();
+    const body = ctx.blockStmt();
+  
+    this.compileLambda(paramList, body);
+  
+    // Assign the generated lambda to the function name
+    this.instrs[this.wc++] = {
+      tag: "ASSIGN",
+      pos: this.compile_time_environment_position(
+        this.global_compile_environment,
+        functionName
+      ),
+    };
   }
 
   visitLambdaExpr(ctx: LambdaExprContext): void {
-    const params = ctx
-      .paramList()
-      .IDENTIFIER()
-      .map((id) => ({
-        name: id.getText(),
-        mutable: false,
-      }));
-    console.log("params", params);
+    // Extract the parameter list and body
+    const paramList = ctx.paramList();
+    const body = ctx.blockStmt() || ctx.expression();
+  
+    // Use the helper method to compile the lambda logic
+    this.compileLambda(paramList, body);
+  }
+
+  private compileLambda(
+    paramList: ParamListContext | null,
+    body: BlockStmtContext | ExpressionContext | null
+  ): void {
+    // Extract the parameters
+    const params = paramList
+      ? paramList.IDENTIFIER().map((id) => ({
+          name: id.getText(),
+          mutable: false,
+        }))
+      : [];
+  
+    // Emit an LDF (Load Function) instruction to create a closure
     this.instrs[this.wc++] = {
       tag: "LDF",
-      arity: ctx.paramList().IDENTIFIER().length,
+      arity: params.length,
       addr: this.wc + 1,
     };
-    const goto_instruction = { tag: "GOTO", addr: null };
-    this.instrs[this.wc++] = goto_instruction;
+  
+    // Emit a GOTO instruction to skip over the lambda body
+    const gotoInstruction = { tag: "GOTO", addr: null };
+    this.instrs[this.wc++] = gotoInstruction;
+
     const previousEnvironment = this.global_compile_environment;
     this.global_compile_environment = this.compile_time_environment_extend(
       params,
       this.global_compile_environment
     );
-    this.showGlobalCompileEnvironment();
-    // check if the lambda expression has a block statement or an expression
-    if (ctx.expression()) {
-      this.visit(ctx.expression());
-    } else if (ctx.blockStmt()) {
-      this.visit(ctx.blockStmt());
+  
+    if (body instanceof ExpressionContext) {
+      this.visit(body);
+    } else if (body instanceof BlockStmtContext) {
+      this.visit(body);
     }
+  
+    // Emit a LDC (Load Constant) instruction to return undefined if no explicit return
     this.instrs[this.wc++] = { tag: "LDC", val: undefined };
+    // Emit a RESET instruction to reset the environment after the lambda body
     this.instrs[this.wc++] = { tag: "RESET" };
-    goto_instruction.addr = this.wc;
+    // Patch the GOTO instruction to jump to the end of the lambda body
+    gotoInstruction.addr = this.wc;
+    // Restore the previous compile-time environment
     this.global_compile_environment = previousEnvironment;
   }
 

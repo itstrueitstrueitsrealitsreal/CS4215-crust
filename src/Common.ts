@@ -10,4 +10,4 @@ export const push = (array, ...items) => {
       array.push(item);
     }
     return array;
-  };
+};

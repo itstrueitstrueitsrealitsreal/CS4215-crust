@@ -14,6 +14,8 @@ export function run(instrs: any[]): any {
   while (!(instrs[PC].tag === "DONE")) {
     const instr = instrs[PC++];
     microcode[instr.tag](instr);
+    // console.log(instr);
+    // console.log("Operand Stack (OS):", OS);
   }
   // If the operand stack is empty, return undefined; otherwise, convert the top value.
   const top = peek(OS, 0);
@@ -489,6 +491,7 @@ const address_to_JS_value = (x) => {
   if (is_String(x)) return heap_get_string(x);
   if (is_Undefined(x)) return undefined;
   if (is_Null(x)) return null;
+  if (is_Closure(x)) return "<closure>";
   // Add other type conversions as needed
   throw new Error(`Cannot convert address ${x} to JS value`);
 };
@@ -511,8 +514,6 @@ const address_to_JS_value = (x) => {
 // 		address_to_JS_value(heap_get_child(x, 0)),
 // 		address_to_JS_value(heap_get_child(x, 1)),
 //   ]
-// : is_Closure(x)
-// ? "<closure>"
 // : is_Builtin(x)
 // ? "<builtin>"
 // : "unknown word tag: " + word_to_string(x);
