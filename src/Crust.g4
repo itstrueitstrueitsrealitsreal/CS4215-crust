@@ -73,7 +73,7 @@ expression:
 	| lambdaExpr
 	| lambdaCall;
 
-lambdaExpr: '(' paramList? ')' '=>' (expression | blockStmt);
+lambdaExpr: '|' paramList? '|' (expression | blockStmt);
 lambdaCall: IDENTIFIER '(' argList? ')';
 paramList: IDENTIFIER (',' IDENTIFIER)*;
 argList: expression (',' expression)*;

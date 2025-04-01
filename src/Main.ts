@@ -65,17 +65,18 @@ async function main() {
   const evaluator = new CrustEvaluator(conductor);
 
 const chunk = `{
-let fact = (n) => {
-  return fact_iter(n, 1, 1);
-}
-let fact_iter = (n, i, acc) => {
-  if (i > n) {
-    return acc;
-  } else {
-    return fact_iter(n, i + 1, acc * i);
-}
-}
-fact(4);
+    let fact_iter = |n, i, acc| {
+        if i > n {
+            return acc;
+        } else {
+            return fact_iter(n, i + 1, acc * i);
+        }
+    };
+    let fact = |n| {
+        return fact_iter(n, 1, 1);
+    };
+
+    fact(4);
 }`;
 
   await evaluator.evaluateChunk(chunk);
