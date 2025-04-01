@@ -3,7 +3,6 @@ grammar Crust;
 // A program is one or more statements ending with EOF.
 prog: (statement)+ EOF;
 
-// A statement can be an expression statement, variable declaration, if, while, or block.
 statement:
 	exprStmt
 	| varDecl
@@ -17,16 +16,11 @@ statement:
 	| returnStmt
 	| functionDecl;
 
-// An expression statement is an expression followed by a semicolon.
 exprStmt: expression ';';
-
-// A variable declaration: using 'let' similar to Rust.
 varDecl: 'let' ('mut')? IDENTIFIER ('=' expression)? ';';
-
-// Assignment statement now supports both plain assignment and compound assignment.
+// Assignment statement supports both plain assignment and compound assignment.
 assignmentStmt: IDENTIFIER assignOp expression ';';
 
-// Define the assignment operator: a plain '=' or any of the compound assignment operators.
 assignOp:
 	'='
 	| '+='
@@ -40,33 +34,25 @@ assignOp:
 	| '^='
 	| '|=';
 
-// A break statement.
 breakStmt: 'break' ';';
-
-// An if statement with optional else.
 ifStmt: 'if' '(' expression ')' statement ('else' statement)?;
-
-// A while loop.
 whileStmt: 'while' '(' expression ')' statement;
-
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
 
 // Macros: 
-
-// format!: formats a string with arguments.
-formatExpr: 'format!' '(' STRING (',' expression)* ')';
-
 // print!: prints without a newline.
 printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
-
 // println!: prints with a newline. Also allows no arguments.
 printlnStmt:
 	'println!' '(' STRING (',' expression)* ')' ';'
 	| 'println!' '(' ')' ';';
-returnStmt: 'return' expression? ';';
+// format!: formats a string with arguments.
+formatExpr: 'format!' '(' STRING (',' expression)* ')';
 
+returnStmt: 'return' expression? ';';
 functionDecl: 'fn' IDENTIFIER '(' paramList? ')' blockStmt;
+
 
 expression:
 	formatExpr
