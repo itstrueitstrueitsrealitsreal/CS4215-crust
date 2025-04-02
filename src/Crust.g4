@@ -51,7 +51,7 @@ printlnStmt:
 formatExpr: 'format!' '(' STRING (',' expression)* ')';
 
 returnStmt: 'return' expression? ';';
-functionDecl: 'fn' IDENTIFIER '(' paramList? ')' blockStmt;
+functionDecl: 'fn' IDENTIFIER '(' paramList? ')' ('->' typeAnnotation)? blockStmt;
 
 
 expression:
@@ -73,10 +73,12 @@ expression:
 	| lambdaExpr
 	| lambdaCall;
 
-lambdaExpr: '|' paramList? '|' (expression | blockStmt);
+lambdaExpr: '|' paramList? '|' ('->' typeAnnotation)? (expression | blockStmt);
 lambdaCall: IDENTIFIER '(' argList? ')';
-paramList: IDENTIFIER (',' IDENTIFIER)*;
+paramList: IDENTIFIER (':' typeAnnotation)? (',' IDENTIFIER (':' typeAnnotation)?)*;
 argList: expression (',' expression)*;
+
+typeAnnotation: 'int' | 'bool' | 'string' | 'void' | 'i32';
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;
