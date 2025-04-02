@@ -78,7 +78,7 @@ lambdaCall: IDENTIFIER '(' argList? ')';
 paramList: IDENTIFIER (':' typeAnnotation)? (',' IDENTIFIER (':' typeAnnotation)?)*;
 argList: expression (',' expression)*;
 
-typeAnnotation: 'int' | 'bool' | 'string' | 'void' | 'i32';
+typeAnnotation: 'bool' | 'char' | 'String '| 'i32' | 'i64' | '()' ;
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;
