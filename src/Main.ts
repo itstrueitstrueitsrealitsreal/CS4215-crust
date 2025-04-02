@@ -81,7 +81,7 @@ async function main() {
     const chunk = `{
         fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
             if (i > n) {
-                let x = 5;
+                let x : i64 = 5;
                 return acc;
             } else {
                 return fact_iter(n, i + 1, acc * i);

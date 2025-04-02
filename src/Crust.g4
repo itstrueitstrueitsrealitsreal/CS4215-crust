@@ -17,7 +17,7 @@ statement:
 	| functionDecl;
 
 exprStmt: expression ';';
-varDecl: 'let' ('mut')? IDENTIFIER ('=' expression)? ';';
+varDecl: 'let' ('mut')? IDENTIFIER ':' typeAnnotation ('=' expression)? ';';
 // Assignment statement supports both plain assignment and compound assignment.
 assignmentStmt: IDENTIFIER assignOp expression ';';
 
@@ -78,7 +78,7 @@ lambdaCall: IDENTIFIER '(' argList? ')';
 paramList: IDENTIFIER (':' typeAnnotation)? (',' IDENTIFIER (':' typeAnnotation)?)*;
 argList: expression (',' expression)*;
 
-typeAnnotation: 'bool' | 'char' | 'String '| 'i32' | 'i64' | '()' ;
+typeAnnotation: 'bool' | 'char' | 'String '| 'i64' | '()' ;
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;
