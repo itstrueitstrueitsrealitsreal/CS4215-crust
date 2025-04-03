@@ -7,13 +7,16 @@ import { CrustParser, ProgContext } from "./parser/src/CrustParser";
 // Import your custom visitor:
 import { CrustEvaluatorVisitor } from "./CrustEvaluatorVisitor";
 import { run } from "./InstructionRunner";
+import { TypeCheckerVisitor } from "./TypeCheckerVisitor";
 
 export class CrustEvaluator extends BasicEvaluator {
-  private visitor: CrustEvaluatorVisitor;
+  private evaluatorVisitor: CrustEvaluatorVisitor;
+  private typeCheckerVisitor: TypeCheckerVisitor;
 
   constructor(conductor: IRunnerPlugin) {
     super(conductor);
-    this.visitor = new CrustEvaluatorVisitor();
+    this.typeCheckerVisitor = new TypeCheckerVisitor();
+    this.evaluatorVisitor = new CrustEvaluatorVisitor();
   }
 
   async evaluateChunk(chunk: string): Promise<void> {
@@ -28,12 +31,14 @@ export class CrustEvaluator extends BasicEvaluator {
       console.log("PRINTING TREE:");
       console.log(stringTree);
 
-      this.visitor.visit(tree);
-      const instrs = this.visitor.getInstrs();
+      let type = this.typeCheckerVisitor.visit(tree);
+      console.log("Type checking done:", type);
+      this.evaluatorVisitor.visit(tree);
+      const instrs = this.evaluatorVisitor.getInstrs();
       instrs.push({ tag: "DONE" });
 
       console.log("PRINTING INSTRS:");
-      console.log(instrs)
+      console.log(instrs);
       const result = run(instrs);
 
       // const result = this.visitor.visit(tree);

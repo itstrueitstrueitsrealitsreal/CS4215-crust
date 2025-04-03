@@ -67,18 +67,18 @@ export class CrustEvaluatorVisitor
   private scan(ctx: BlockStmtContext): { name: string; mutable: boolean }[] {
     const locals: { name: string; mutable: boolean }[] = [];
     const declaredSymbols = new Set<string>(); // Use a Set to detect duplicates
-  
+
     for (const statementCtx of ctx.statement()) {
       // Handle variable declarations
       if (statementCtx.getChild(0) instanceof VarDeclContext) {
         const varDeclContext = statementCtx.getChild(0) as VarDeclContext;
         const variableName = varDeclContext.IDENTIFIER().getText();
-  
+
         if (declaredSymbols.has(variableName)) {
           throw new Error(`Duplicate declared symbol: '${variableName}'`);
         }
         declaredSymbols.add(variableName);
-  
+
         // Determine mutability. For example, if the second child is "mut", mark as mutable.
         let isMutable = false;
         if (
@@ -91,9 +91,11 @@ export class CrustEvaluatorVisitor
       }
       // Handle function declarations
       else if (statementCtx.getChild(0) instanceof FunctionDeclContext) {
-        const functionDeclContext = statementCtx.getChild(0) as FunctionDeclContext;
+        const functionDeclContext = statementCtx.getChild(
+          0
+        ) as FunctionDeclContext;
         const functionName = functionDeclContext.IDENTIFIER().getText();
-  
+
         if (declaredSymbols.has(functionName)) {
           throw new Error(`Duplicate declared symbol: '${functionName}'`);
         }
@@ -102,7 +104,7 @@ export class CrustEvaluatorVisitor
         locals.push({ name: functionName, mutable: false }); // Functions are immutable by default
       }
     }
-  
+
     console.log("locals", locals);
     return locals;
   }
@@ -366,6 +368,8 @@ export class CrustEvaluatorVisitor
     if (text.startsWith('"')) {
       // Remove the surrounding quotes. You might also need to unescape characters.
       val = text.substring(1, text.length - 1);
+    } else if (/^'.'$/.test(text)) {
+      val = text[1];
     } else if (text === "true") {
       val = true;
     } else if (text === "false") {
@@ -500,9 +504,9 @@ export class CrustEvaluatorVisitor
     const functionName = ctx.IDENTIFIER().getText();
     const paramList = ctx.paramList();
     const body = ctx.blockStmt();
-  
+
     this.compileLambda(paramList, body);
-  
+
     // Assign the generated lambda to the function name
     this.instrs[this.wc++] = {
       tag: "ASSIGN",
@@ -517,7 +521,7 @@ export class CrustEvaluatorVisitor
     // Extract the parameter list and body
     const paramList = ctx.paramList();
     const body = ctx.blockStmt() || ctx.expression();
-  
+
     // Use the helper method to compile the lambda logic
     this.compileLambda(paramList, body);
   }
@@ -533,14 +537,14 @@ export class CrustEvaluatorVisitor
           mutable: false,
         }))
       : [];
-  
+
     // Emit an LDF (Load Function) instruction to create a closure
     this.instrs[this.wc++] = {
       tag: "LDF",
       arity: params.length,
       addr: this.wc + 1,
     };
-  
+
     // Emit a GOTO instruction to skip over the lambda body
     const gotoInstruction = { tag: "GOTO", addr: null };
     this.instrs[this.wc++] = gotoInstruction;
@@ -550,13 +554,13 @@ export class CrustEvaluatorVisitor
       params,
       this.global_compile_environment
     );
-  
+
     if (body instanceof ExpressionContext) {
       this.visit(body);
     } else if (body instanceof BlockStmtContext) {
       this.visit(body);
     }
-  
+
     // Emit a LDC (Load Constant) instruction to return undefined if no explicit return
     this.instrs[this.wc++] = { tag: "LDC", val: undefined };
     // Emit a RESET instruction to reset the environment after the lambda body
