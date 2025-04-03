@@ -71,12 +71,16 @@ expression:
 	| expression op = '|' expression // bitwise OR
 	| expression op = ('&&' | '||') expression // logical AND/OR
 	| lambdaExpr
-	| lambdaCall;
+	| lambdaCall
+	| borrowExpr;
 
 lambdaExpr: '|' paramList? '|' ('->' typeAnnotation)? (expression | blockStmt);
 lambdaCall: IDENTIFIER '(' argList? ')';
 paramList: IDENTIFIER (':' typeAnnotation)? (',' IDENTIFIER (':' typeAnnotation)?)*;
 argList: expression (',' expression)*;
+borrowExpr:
+	'&' IDENTIFIER
+	| '&mut' IDENTIFIER;
 
 typeAnnotation: 'bool' | 'char' | 'String' | 'i64' | '()' ;
 
