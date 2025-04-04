@@ -78,30 +78,30 @@ async function main() {
   //     fact(4);
   // }`;
 
-  const chunk = `{
-        fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
-            if (i > n) {
-                let x : i64 = 5;
-                return acc;
-            } else {
-                return fact_iter(n, i + 1, acc * i);
-            }
-        }
-        // fn fact(n: i64) -> i64 {
-        //     return fact_iter(n, 1, 1);
-        // }
-        let x : i64 = fact_iter(4, 1, 1);
-        let y : i64 =  8;
-        fn fact(n: String) -> i64 {
-            return fact_iter(n, 1, 1);
-        };
-    }`;
+  // const chunk = `{
+  //       fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+  //           if (i > n) {
+  //               let x : i64 = 5;
+  //               return acc;
+  //           } else {
+  //               return fact_iter(n, i + 1, acc * i);
+  //           }
+  //       }
+
+  //       let z: String = fact_iter(4, 1, 1);
+  //   }`;
 
   // const chunk = `{
   //     fn func(x) {
   //         5;
   //     }
   // }`;
+  const chunk = `{
+  fn func(x: i64) -> i64 {
+    return x + 10;
+  }
+    let x: i64 = func(5);
+  }`
 
   await evaluator.evaluateChunk(chunk);
 }
