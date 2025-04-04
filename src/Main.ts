@@ -100,7 +100,13 @@ async function main() {
   fn func(x: i64) -> i64 {
     return x + 10;
   }
-    let x: i64 = func(5);
+    println!("{}", "hello");
+        let x: i64 = func(5);
+        let y: i64 = func(5);
+        let z: i64 = 5;
+        let a: String = format!("{}", z); 
+        println!("{}", z);
+        println!("{z}{z}{z}{z}");
   }`
 
   await evaluator.evaluateChunk(chunk);

@@ -406,12 +406,11 @@ export class CrustEvaluatorVisitor
   }
 
   private compileTemplate(formatStr: string, exprs: ExpressionContext[]): void {
-    // Regular expression to capture placeholders like {…}
     const re = /\{([^}]*)\}/g;
     let lastIndex = 0;
     const literalParts: string[] = [];
     const placeholders: string[] = [];
-
+  
     let match: RegExpExecArray | null;
     while ((match = re.exec(formatStr)) !== null) {
       literalParts.push(formatStr.substring(lastIndex, match.index));
@@ -419,29 +418,33 @@ export class CrustEvaluatorVisitor
       lastIndex = re.lastIndex;
     }
     literalParts.push(formatStr.substring(lastIndex));
-
+  
     // If there are no placeholders, just load the literal.
     if (placeholders.length === 0) {
       this.instrs[this.wc++] = { tag: "LDC", val: formatStr };
       return;
     }
-
-    // 1. Load the first literal part.
+  
+    // Load the first literal part.
     this.instrs[this.wc++] = { tag: "LDC", val: literalParts[0] };
-
-    // 2. For each placeholder, process it.
+  
     let posCounter = 0;
     for (let i = 0; i < placeholders.length; i++) {
       const ph = placeholders[i];
+  
       if (ph === "") {
-        // Positional placeholder: compile the next expression.
         if (posCounter >= exprs.length) {
           throw new Error("Not enough arguments for positional placeholder");
         }
+  
+        // Visit the expression
         this.visit(exprs[posCounter]);
+  
+        // Explicitly convert numbers to strings:
+        this.instrs[this.wc++] = { tag: "TOSTRING" };
         posCounter++;
       } else {
-        // Named placeholder: load the variable from the environment.
+        // Named placeholder: load variable from environment.
         this.instrs[this.wc++] = {
           tag: "LD",
           pos: this.compile_time_environment_position(
@@ -449,15 +452,19 @@ export class CrustEvaluatorVisitor
             ph
           ),
         };
+        // Explicitly convert numbers to strings:
+        this.instrs[this.wc++] = { tag: "TOSTRING" };
       }
+  
       // Concatenate the placeholder's value.
       this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
-      // Load the next literal part.
+  
+      // Load and concatenate the next literal part.
       this.instrs[this.wc++] = { tag: "LDC", val: literalParts[i + 1] };
-      // Concatenate.
       this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
     }
   }
+  
 
   visitPrintStmt(ctx: PrintStmtContext): void {
     // Process the format string and expressions
