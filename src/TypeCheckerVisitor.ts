@@ -175,7 +175,6 @@ export class TypeCheckerVisitor
   ): TypeEnvironment {
     // Create a new frame (a Map) for the local declarations
     const newFrame = new Map<string, Type>();
-
     // Add each local declaration to the new frame
     for (const local of locals) {
       if (newFrame.has(local.name)) {
@@ -183,8 +182,7 @@ export class TypeCheckerVisitor
       }
       newFrame.set(local.name, local.type);
     }
-
-    return push(environment, newFrame);
+    return push([...environment], newFrame);
   }
 
   private visitStatements(statements: StatementContext[]): Type {

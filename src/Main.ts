@@ -87,27 +87,33 @@ async function main() {
   //               return fact_iter(n, i + 1, acc * i);
   //           }
   //       }
-
-  //       let z: String = fact_iter(4, 1, 1);
+  //       // fn fact(n: i64) -> i64 {
+  //       //     return fact_iter(n, 1, 1);
+  //       // };
   //   }`;
+
+  // const chunk = `{
+  //   fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+  //       if (i > n) {
+  //           let x : i64 = 5;
+  //           return acc;
+  //       } else {
+  //           return fact_iter(n, i + 1, acc * i);
+  //       }
+  //   }
+  //   let x : String = fact_iter(3, 1, 1);
+  // }`;
+
+  const chunk = `{
+      {let x : String = "hello";};
+      let x: i64 = "bye";
+  }`;
 
   // const chunk = `{
   //     fn func(x) {
   //         5;
   //     }
   // }`;
-  const chunk = `{
-  fn func(x: i64) -> i64 {
-    return x + 10;
-  }
-    println!("{}", "hello");
-        let x: i64 = func(5);
-        let y: i64 = func(5);
-        let z: i64 = 5;
-        let a: String = format!("{}", z); 
-        println!("{}", z);
-        println!("{z}{z}{z}{z}");
-  }`
 
   await evaluator.evaluateChunk(chunk);
 }
