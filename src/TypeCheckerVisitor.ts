@@ -94,16 +94,31 @@ export class TypeCheckerVisitor
     context: string
   ) {
     const sym = ctx.IDENTIFIER().getText();
-    const declaredType = this.lookupType(sym);
+    
+    // Get the declared type differently based on context
+    let declaredType: Type;
+    
+    if (ctx instanceof VarDeclContext) {
+      // For variable declarations, get type from type annotation
+      const typeAnnotation = ctx.typeAnnotation().getText();
+      declaredType = this.parseType(typeAnnotation);
+    } else {
+      // For assignments, look up the variable's type
+      declaredType = this.lookupType(sym);
+    }
+    
+    // Get the actual type of the expression
     const actualType = this.visit(ctx.expression());
+    
+    // Check if the types are compatible
     if (!this.isTypeEqual(actualType, declaredType)) {
       throw new Error(
         `Type error in ${context} for '${sym}'; ` +
-          `declared type: ${this.typeToString(
-            declaredType
-          )}, actual type: ${this.typeToString(actualType)}`
+        `declared type: ${this.typeToString(declaredType)}, actual type: ${this.typeToString(actualType)}`
       );
     }
+    
+    return declaredType; // Return the type for potential use
   }
 
   private scan(ctx: BlockStmtContext): { name: string; type: Type }[] {
