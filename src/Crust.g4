@@ -17,7 +17,8 @@ statement:
 	| functionDecl;
 
 exprStmt: expression ';';
-varDecl: 'let' ('mut')? IDENTIFIER ':' typeAnnotation ('=' expression)? ';';
+varDecl:
+	'let' ('mut')? IDENTIFIER ':' typeAnnotation ('=' expression)? ';';
 // Assignment statement supports both plain assignment and compound assignment.
 assignmentStmt: IDENTIFIER assignOp expression ';';
 
@@ -40,8 +41,7 @@ whileStmt: 'while' '(' expression ')' statement;
 // A block is a sequence of statements enclosed in braces.
 blockStmt: '{' statement* '}'; // have not implemented scope yet
 
-// Macros: 
-// print!: prints without a newline.
+// Macros: print!: prints without a newline.
 printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
 // println!: prints with a newline. Also allows no arguments.
 printlnStmt:
@@ -51,8 +51,8 @@ printlnStmt:
 formatExpr: 'format!' '(' STRING (',' expression)* ')';
 
 returnStmt: 'return' expression? ';';
-functionDecl: 'fn' IDENTIFIER '(' paramList? ')' ('->' typeAnnotation)? blockStmt;
-
+functionDecl:
+	'fn' IDENTIFIER '(' paramList? ')' ('->' typeAnnotation)? blockStmt;
 
 expression:
 	formatExpr
@@ -71,14 +71,29 @@ expression:
 	| expression op = '|' expression // bitwise OR
 	| expression op = ('&&' | '||') expression // logical AND/OR
 	| lambdaExpr
-	| lambdaCall;
+	| lambdaCall
+	| expression '.' methodCall;
 
-lambdaExpr: '|' paramList? '|' ('->' typeAnnotation)? (expression | blockStmt);
+methodCall: 'to_string' '(' ')' | 'to_owned' '(' ')';
+lambdaExpr:
+	'|' paramList? '|' ('->' typeAnnotation)? (
+		expression
+		| blockStmt
+	);
 lambdaCall: IDENTIFIER '(' argList? ')';
-paramList: IDENTIFIER (':' typeAnnotation)? (',' IDENTIFIER (':' typeAnnotation)?)*;
+paramList:
+	IDENTIFIER (':' typeAnnotation)? (
+		',' IDENTIFIER (':' typeAnnotation)?
+	)*;
 argList: expression (',' expression)*;
 
-typeAnnotation: 'bool' | 'char' | 'String' | 'i64' | '()' ;
+typeAnnotation:
+	'bool'
+	| 'char'
+	| '&str' // implements copy
+	| 'String' // implements move
+	| 'i64'
+	| '()';
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;

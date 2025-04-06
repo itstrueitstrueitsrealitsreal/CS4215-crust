@@ -64,49 +64,15 @@ async function main() {
   const conductor = new MockConductor();
   const evaluator = new CrustEvaluator(conductor);
 
-  // const chunk = `{
-  //     let fact_iter = |n, i, acc| {
-  //         if i > n {
-  //             return acc;
-  //         } else {
-  //             return fact_iter(n, i + 1, acc * i);
-  //         }
-  //     };
-  //     let fact = |n| {
-  //         return fact_iter(n, 1, 1);
-  //     };
-  //     fact(4);
-  // }`;
-
-  // const chunk = `{
-  //       fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
-  //           if (i > n) {
-  //               let x : i64 = 5;
-  //               return acc;
-  //           } else {
-  //               return fact_iter(n, i + 1, acc * i);
-  //           }
-  //       }
-  //       // fn fact(n: i64) -> i64 {
-  //       //     return fact_iter(n, 1, 1);
-  //       // };
-  //   }`;
-
-  // const chunk = `{
-  //   fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
-  //       if (i > n) {
-  //           let x : i64 = 5;
-  //           return acc;
-  //       } else {
-  //           return fact_iter(n, i + 1, acc * i);
-  //       }
-  //   }
-  //   let x : String = fact_iter(3, 1, 1);
-  // }`;
-
   const chunk = `{
-      {let x : String = "hello";};
-      let x: i64 = "bye";
+    let a: &str = "hello";
+    let b: &str = a;
+    println!("{}", a);
+    // Should pass
+    let c: String = "hello".to_string();
+    // let d: String = c;
+    println!("{}", c);
+    // Should fail
   }`;
 
   // const chunk = `{
