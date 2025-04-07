@@ -73,6 +73,63 @@ async function main() {
     // let d: String = c;
     println!("{}", c);
     // Should fail
+  // const chunk = `{
+  //     let fact_iter = |n, i, acc| {
+  //         if i > n {
+  //             return acc;
+  //         } else {
+  //             return fact_iter(n, i + 1, acc * i);
+  //         }
+  //     };
+  //     let fact = |n| {
+  //         return fact_iter(n, 1, 1);
+  //     };
+  //     fact(4);
+  // }`;
+
+  // const chunk = `{
+  //       fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+  //           if (i > n) {
+  //               let x : i64 = 5;
+  //               return acc;
+  //           } else {
+  //               return fact_iter(n, i + 1, acc * i);
+  //           }
+  //       }
+  //       // fn fact(n: i64) -> i64 {
+  //       //     return fact_iter(n, 1, 1);
+  //       // };
+  //   }`;
+
+  // const chunk = `{
+  //   fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+  //       if (i > n) {
+  //           let x : i64 = 5;
+  //           return acc;
+  //       } else {
+  //           return fact_iter(n, i + 1, acc * i);
+  //       }
+  //   }
+  //   let x : String = fact_iter(3, 1, 1);
+  // }`;
+
+  // const chunk = `{
+  //     {let x : String = "hello";};
+  //     let x: i64 = "bye";
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 5;
+  //   let mut y: i64 = x;
+  //   x = 10;
+  //   y;
+  // }`;
+
+  const chunk = `{
+    let mut x: String = "hello";
+    let mut y: String = x;
+    x = "world";
+    y;
   }`;
 
   // const chunk = `{
