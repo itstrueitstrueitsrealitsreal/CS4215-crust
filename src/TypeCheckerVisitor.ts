@@ -15,16 +15,18 @@ import {
   ExprStmtContext,
   IfStmtContext,
   WhileStmtContext,
+  MethodCallContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
-
+export const typeMap = new Map<string, Type>();
 export class TypeCheckerVisitor
   extends AbstractParseTreeVisitor<Type>
   implements CrustVisitor<Type>
 {
   private globalTypeEnvironment: TypeEnvironment = [];
   private currentFunctionReturnType: Type | null = null;
+  private currentBaseType: Type | null = null;
 
   private lookupType(name: string): Type {
     for (let i = this.globalTypeEnvironment.length - 1; i >= 0; i--) {
@@ -79,46 +81,61 @@ export class TypeCheckerVisitor
     }
   }
 
-  visitVarDecl(ctx: VarDeclContext): Type {
-    this.checkType(ctx, "variable declaration");
+  public visitVarDecl(ctx: VarDeclContext): Type {
+    // single call to checkType does the heavy lifting
+    const declaredType = this.checkType(ctx, "variable declaration");
+    this.addBinding(ctx.IDENTIFIER().getText(), declaredType);
     return "()";
   }
 
-  visitAssignmentStmt(ctx: AssignmentStmtContext): Type {
+  public visitAssignmentStmt(ctx: AssignmentStmtContext): Type {
+    // single call to checkType
     this.checkType(ctx, "assignment");
+    // no need to add a new binding, since variable is already in environment
     return "()";
   }
 
   private checkType(
     ctx: VarDeclContext | AssignmentStmtContext,
     context: string
-  ) {
+  ): Type {
     const sym = ctx.IDENTIFIER().getText();
-    
-    // Get the declared type differently based on context
+
     let declaredType: Type;
-    
     if (ctx instanceof VarDeclContext) {
-      // For variable declarations, get type from type annotation
+      // if it's a VarDecl, we read the user's type annotation
       const typeAnnotation = ctx.typeAnnotation().getText();
       declaredType = this.parseType(typeAnnotation);
     } else {
-      // For assignments, look up the variable's type
+      // if it's an assignment, we look up the variable's known type
       declaredType = this.lookupType(sym);
     }
-    
-    // Get the actual type of the expression
+
+    // get the type of the expression
     const actualType = this.visit(ctx.expression());
-    
-    // Check if the types are compatible
+
+    // compare
     if (!this.isTypeEqual(actualType, declaredType)) {
       throw new Error(
         `Type error in ${context} for '${sym}'; ` +
-        `declared type: ${this.typeToString(declaredType)}, actual type: ${this.typeToString(actualType)}`
+          `declared type: ${this.typeToString(declaredType)}, ` +
+          `actual type: ${this.typeToString(actualType)}`
       );
     }
-    
-    return declaredType; // Return the type for potential use
+    return declaredType;
+  }
+
+  // For environment logic
+  private addBinding(name: string, declaredType: Type): void {
+    if (this.globalTypeEnvironment.length === 0) {
+      this.globalTypeEnvironment.push(new Map<string, Type>());
+    }
+    const topFrame =
+      this.globalTypeEnvironment[this.globalTypeEnvironment.length - 1];
+    topFrame.set(name, declaredType);
+
+    // Also store in a global or shared map for code gen
+    typeMap.set(name, declaredType);
   }
 
   private scan(ctx: BlockStmtContext): { name: string; type: Type }[] {
@@ -219,8 +236,56 @@ export class TypeCheckerVisitor
     // Just compile the contained expression.
     return this.visit(ctx.expression());
   }
+  visitMethodCall(ctx: MethodCallContext): Type {
+    // Get the stored base type
+    const baseType = this.currentBaseType;
+    if (baseType === null) {
+      throw new Error("Method call without a base expression");
+    }
+
+    const methodName = ctx.getChild(0).getText(); // First child is the method name
+
+    if (methodName === "to_owned") {
+      // Suppose we only allow .to_owned on an &str -> yields String
+      if (baseType === "&str") {
+        return "String";
+      } else {
+        throw new Error(`.to_owned() is not valid on type '${baseType}'`);
+      }
+    } else if (methodName === "to_string") {
+      // Let's allow &str, i64, bool, etc. to be converted to String
+      if (baseType === "&str" || baseType === "i64" || baseType === "bool") {
+        return "String";
+      } else {
+        throw new Error(`.to_string() is not valid on type '${baseType}'`);
+      }
+    }
+
+    throw new Error(`Unsupported method: '${methodName}'`);
+  }
   visitExpression(ctx: ExpressionContext): Type {
-    if (ctx.getChildCount() === 1) {
+    if (
+      ctx.getChildCount() === 3 &&
+      ctx.getChild(1).getText() === "." &&
+      ctx.methodCall() !== undefined // or ctx.methodCall() != null
+    ) {
+      // base expression is child(0)
+      const baseType = this.visit(ctx.getChild(0) as ExpressionContext);
+
+      // Store the base type for use in visitMethodCall
+      this.currentBaseType = baseType;
+
+      // methodCall is child(2)
+      const methodCtx = ctx.methodCall();
+      // call our helper
+      const result = this.visitMethodCall(methodCtx);
+
+      // Clean up after method call
+      this.currentBaseType = null;
+
+      return result;
+      return this.visitMethodCall(methodCtx);
+    } else if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
         return this.visit(ctx.getChild(0) as LiteralContext);
       } else if (ctx.IDENTIFIER()) {
@@ -350,7 +415,7 @@ export class TypeCheckerVisitor
     } else if (text === "true" || text === "false") {
       return "bool";
     } else if (text.startsWith('"') && text.endsWith('"')) {
-      return "String";
+      return "&str";
     } else if (
       text.startsWith("'") &&
       text.endsWith("'") &&
@@ -543,6 +608,7 @@ export class TypeCheckerVisitor
     switch (typeAnnotation) {
       case "bool":
       case "char":
+      case "&str":
       case "String":
       case "i64":
       case "()":
@@ -638,7 +704,14 @@ export class TypeCheckerVisitor
   }
 }
 
-export type Type = "bool" | "char" | "String" | "i64" | "()" | FunctionType;
+export type Type =
+  | "bool"
+  | "char"
+  | "&str"
+  | "String"
+  | "i64"
+  | "()"
+  | FunctionType;
 
 export interface FunctionType {
   params: Type[];

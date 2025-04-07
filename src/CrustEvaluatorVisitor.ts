@@ -21,7 +21,7 @@ import {
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
-
+import { typeMap, Type } from "./TypeCheckerVisitor";
 export class CrustEvaluatorVisitor
   extends AbstractParseTreeVisitor<void>
   implements CrustVisitor<void>
@@ -45,27 +45,24 @@ export class CrustEvaluatorVisitor
     this.compileSequence(ctx.statement());
   }
 
-  //     const primitive_object = {};
-  // const compile_time_environment_extend = (vs, e) => {
-  // 	//  make shallow copy of e
-  // 	return push([...e], vs);
-  // };
-
-  // // compile-time frames only need synbols (keys), no values
-  // const global_compile_frame = Object.keys(primitive_object);
-  private global_compile_environment: { name: string; mutable: boolean }[][] =
-    [];
+  private global_compile_environment: {
+    name: string;
+    mutable: boolean;
+    type: Type;
+  }[][] = [];
 
   private compile_time_environment_extend(
-    vs: { name: string; mutable: boolean }[],
-    e: { name: string; mutable: boolean }[][]
-  ): { name: string; mutable: boolean }[][] {
+    vs: { name: string; mutable: boolean; type: Type }[],
+    e: { name: string; mutable: boolean; type: Type }[][]
+  ): { name: string; mutable: boolean; type: Type }[][] {
     //  make shallow copy of e
     return push([...e], vs);
   }
 
-  private scan(ctx: BlockStmtContext): { name: string; mutable: boolean }[] {
-    const locals: { name: string; mutable: boolean }[] = [];
+  private scan(
+    ctx: BlockStmtContext
+  ): { name: string; mutable: boolean; type: Type }[] {
+    const locals: { name: string; mutable: boolean; type: Type }[] = [];
     const declaredSymbols = new Set<string>(); // Use a Set to detect duplicates
 
     for (const statementCtx of ctx.statement()) {
@@ -87,7 +84,12 @@ export class CrustEvaluatorVisitor
         ) {
           isMutable = true;
         }
-        locals.push({ name: variableName, mutable: isMutable });
+        const declaredType = typeMap.get(variableName) || "()";
+        locals.push({
+          name: variableName,
+          mutable: isMutable,
+          type: declaredType,
+        });
       }
       // Handle function declarations
       else if (statementCtx.getChild(0) instanceof FunctionDeclContext) {
@@ -100,8 +102,8 @@ export class CrustEvaluatorVisitor
           throw new Error(`Duplicate declared symbol: '${functionName}'`);
         }
         declaredSymbols.add(functionName);
-
-        locals.push({ name: functionName, mutable: false }); // Functions are immutable by default
+        const fnType = typeMap.get(functionName) || "()";
+        locals.push({ name: functionName, mutable: false, type: fnType });
       }
     }
 
@@ -314,18 +316,37 @@ export class CrustEvaluatorVisitor
 
   // Visitor for an expression.
   visitExpression(ctx: ExpressionContext): void {
-    if (ctx.getChildCount() === 1) {
+    if (ctx.getChildCount() === 3 && ctx.getChild(1).getText() === ".") {
+      // This is a method call expression: expr.method()
+      // 1) Compile the base expression
+      this.visit(ctx.getChild(0) as ExpressionContext);
+
+      // 2) Handle the method call
+      const methodCall = ctx.getChild(2);
+      if (methodCall.getText().includes("to_string")) {
+        this.instrs[this.wc++] = { tag: "TOSTRING" };
+      } else if (methodCall.getText().includes("to_owned")) {
+        this.instrs[this.wc++] = { tag: "TOOWNED" };
+      }
+      return;
+    } else if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
         this.visit(ctx.getChild(0) as LiteralContext);
       } else if (ctx.IDENTIFIER()) {
         const sym = ctx.IDENTIFIER().getText();
+        const [frameIndex, valueIndex] = this.compile_time_environment_position(
+          this.global_compile_environment,
+          sym
+        );
+        const varEntry =
+          this.global_compile_environment[frameIndex][valueIndex];
         this.instrs[this.wc++] = {
           tag: "LD",
-          pos: this.compile_time_environment_position(
-            this.global_compile_environment,
-            sym
-          ),
+          pos: [frameIndex, valueIndex],
         };
+        if (this.isMoveType(varEntry.type)) {
+          this.removeSymbolFromEnvironment(frameIndex, valueIndex);
+        }
       } else if (ctx.getChild(0) instanceof FormatExprContext) {
         this.visit(ctx.getChild(0));
       } else if (ctx.getChild(0) instanceof LambdaCallContext) {
@@ -410,7 +431,7 @@ export class CrustEvaluatorVisitor
     let lastIndex = 0;
     const literalParts: string[] = [];
     const placeholders: string[] = [];
-  
+
     let match: RegExpExecArray | null;
     while ((match = re.exec(formatStr)) !== null) {
       literalParts.push(formatStr.substring(lastIndex, match.index));
@@ -418,28 +439,28 @@ export class CrustEvaluatorVisitor
       lastIndex = re.lastIndex;
     }
     literalParts.push(formatStr.substring(lastIndex));
-  
+
     // If there are no placeholders, just load the literal.
     if (placeholders.length === 0) {
       this.instrs[this.wc++] = { tag: "LDC", val: formatStr };
       return;
     }
-  
+
     // Load the first literal part.
     this.instrs[this.wc++] = { tag: "LDC", val: literalParts[0] };
-  
+
     let posCounter = 0;
     for (let i = 0; i < placeholders.length; i++) {
       const ph = placeholders[i];
-  
+
       if (ph === "") {
         if (posCounter >= exprs.length) {
           throw new Error("Not enough arguments for positional placeholder");
         }
-  
+
         // Visit the expression
         this.visit(exprs[posCounter]);
-  
+
         // Explicitly convert numbers to strings:
         this.instrs[this.wc++] = { tag: "TOSTRING" };
         posCounter++;
@@ -455,16 +476,15 @@ export class CrustEvaluatorVisitor
         // Explicitly convert numbers to strings:
         this.instrs[this.wc++] = { tag: "TOSTRING" };
       }
-  
+
       // Concatenate the placeholder's value.
       this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
-  
+
       // Load and concatenate the next literal part.
       this.instrs[this.wc++] = { tag: "LDC", val: literalParts[i + 1] };
       this.instrs[this.wc++] = { tag: "BINOP", sym: "+" };
     }
   }
-  
 
   visitPrintStmt(ctx: PrintStmtContext): void {
     // Process the format string and expressions
@@ -542,6 +562,7 @@ export class CrustEvaluatorVisitor
       ? paramList.IDENTIFIER().map((id) => ({
           name: id.getText(),
           mutable: false,
+          type: "()" as Type,
         }))
       : [];
 
@@ -619,6 +640,12 @@ export class CrustEvaluatorVisitor
       }
     }
   }
+  private removeSymbolFromEnvironment(
+    frameIndex: number,
+    valueIndex: number
+  ): void {
+    this.global_compile_environment[frameIndex].splice(valueIndex, 1);
+  }
 
   // Override the default result method.
   protected defaultResult(): void {
@@ -633,5 +660,11 @@ export class CrustEvaluatorVisitor
   // Public method to obtain generated instructions.
   public getInstrs(): any[] {
     return this.instrs;
+  }
+  private isMoveType(t: Type): boolean {
+    if (typeof t === "string") {
+      return t === "String";
+    }
+    return false;
   }
 }

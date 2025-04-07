@@ -476,6 +476,12 @@ const microcode = {
     const strVal = String(jsVal);
     push(OS, JS_value_to_address(strVal));
   },
+  TOOWNED: (instr) => {
+    const val = OS.pop();
+    const jsVal = address_to_JS_value(val);
+    const strVal = String(jsVal);
+    push(OS, JS_value_to_address(strVal));
+  },
 };
 
 const apply_binop = (op, v2, v1) =>
