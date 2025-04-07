@@ -104,9 +104,23 @@ async function main() {
   //   let x : String = fact_iter(3, 1, 1);
   // }`;
 
+  // const chunk = `{
+  //     {let x : String = "hello";};
+  //     let x: i64 = "bye";
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 5;
+  //   let mut y: i64 = x;
+  //   x = 10;
+  //   y;
+  // }`;
+
   const chunk = `{
-      {let x : String = "hello";};
-      let x: i64 = "bye";
+    let mut x: String = "hello";
+    let mut y: String = x;
+    x = "world";
+    y;
   }`;
 
   // const chunk = `{
