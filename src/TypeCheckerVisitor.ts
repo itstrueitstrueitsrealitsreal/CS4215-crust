@@ -18,7 +18,7 @@ import {
   MethodCallContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
-import { push } from "./Common";
+import { push } from "./utils/Common";
 import {
   FunctionType,
   isFunctionType,
@@ -26,7 +26,7 @@ import {
   parseType,
   Type,
   typeToString,
-} from "./InstructionRunnerUtils/TypeUtils";
+} from "./utils/TypeUtils";
 export const typeMap = new Map<string, Type>();
 export class TypeCheckerVisitor
   extends AbstractParseTreeVisitor<Type>

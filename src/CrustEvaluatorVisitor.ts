@@ -20,9 +20,9 @@ import {
   ParamListContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
-import { push } from "./Common";
+import { push } from "./utils/Common";
 import { typeMap } from "./TypeCheckerVisitor";
-import { Type } from "./InstructionRunnerUtils/TypeUtils";
+import { Type } from "./utils/TypeUtils";
 export class CrustEvaluatorVisitor
   extends AbstractParseTreeVisitor<void>
   implements CrustVisitor<void>

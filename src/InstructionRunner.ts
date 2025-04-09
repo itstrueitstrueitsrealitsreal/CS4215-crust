@@ -1,8 +1,5 @@
-import { push } from "./Common";
-import {
-  binop_microcode,
-  unop_microcode,
-} from "./InstructionRunnerUtils/OpMicrocodeUtil";
+import { push } from "./utils/Common";
+import { binop_microcode, unop_microcode } from "./utils/OpMicrocodeUtil";
 
 export function run(instrs: any[]): any {
   OS = [];
