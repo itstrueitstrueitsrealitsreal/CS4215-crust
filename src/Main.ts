@@ -64,15 +64,17 @@ async function main() {
   const conductor = new MockConductor();
   const evaluator = new CrustEvaluator(conductor);
 
-  const chunk = `{
-    let a: &str = "hello";
-    let b: &str = a;
-    println!("{}", a);
-    // Should pass
-    let c: String = "hello".to_string();
-    // let d: String = c;
-    println!("{}", c);
-    // Should fail
+  // const chunk = `{
+  //   let a: &str = "hello";
+  //   let b: &str = a;
+  //   println!("{}", a);
+  //   // Should pass
+  //   let c: String = "hello".to_string();
+  //   // let d: String = c;
+  //   println!("{}", c);
+  // }`;
+
+  // Should fail
   // const chunk = `{
   //     let fact_iter = |n, i, acc| {
   //         if i > n {
@@ -87,19 +89,20 @@ async function main() {
   //     fact(4);
   // }`;
 
-  // const chunk = `{
-  //       fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
-  //           if (i > n) {
-  //               let x : i64 = 5;
-  //               return acc;
-  //           } else {
-  //               return fact_iter(n, i + 1, acc * i);
-  //           }
-  //       }
-  //       // fn fact(n: i64) -> i64 {
-  //       //     return fact_iter(n, 1, 1);
-  //       // };
-  //   }`;
+  const chunk = `{
+        fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+            if (i > n) {
+                let x : i64 = 5;
+                return acc;
+            } else {
+                return fact_iter(n, i + 1, acc * i);
+            }
+        }
+        fn fact(n: i64) -> i64 {
+            return fact_iter(n, 1, 1);
+        };
+        let x : i64 = fact_iter(4, 1, 1);
+    }`;
 
   // const chunk = `{
   //   fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
@@ -114,6 +117,12 @@ async function main() {
   // }`;
 
   // const chunk = `{
+  //     fn func(x) {
+  //         5;
+  //     }
+  // }`;
+
+  // const chunk = `{
   //     {let x : String = "hello";};
   //     let x: i64 = "bye";
   // }`;
@@ -125,17 +134,45 @@ async function main() {
   //   y;
   // }`;
 
-  const chunk = `{
-    let mut x: String = "hello";
-    let mut y: String = x;
-    x = "world";
-    y;
-  }`;
+  // const chunk = `{
+  //   let mut x: String = "hello".to_string();
+  //   let mut y: String = x;
+  //   x = "world".to_string();
+  //   y;
+  // }`;
 
   // const chunk = `{
-  //     fn func(x) {
-  //         5;
-  //     }
+  //   let mut x: String = "hello".to_string();
+  //   let mut y: String = x;
+  //   x = "world".to_string();
+  //   y = "world".to_string();
+  // }`;
+
+  // ❌ Mutable borrow while immutable borrow is still active
+  // const chunk = `{
+  //   let mut x: i64 = 5;
+
+  //   let r1: &i64 = &x;
+  //   let r2: &muti64 = &mut x;
+
+  //   println!("r1: {}, r2: {}", r1, r2);
+  // }`;
+
+  // ❌ ERROR: a is no longer valid
+  // const chunk = `{
+  //   let a = String::from("hello");
+  //   let b = a; // ownership of the String moves to b
+
+  //   println!("{}", a);
+  //   println!("{}", b);
+  // }`;
+
+  // ✅ OK: read-only borrow
+  // const chunk = `{
+  //   let x = 42;
+  //   let r = &x;
+
+  //   println!("x: {}, r: {}", x, r);
   // }`;
 
   await evaluator.evaluateChunk(chunk);

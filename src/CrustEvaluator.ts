@@ -8,15 +8,18 @@ import { CrustParser, ProgContext } from "./parser/src/CrustParser";
 import { CrustEvaluatorVisitor } from "./CrustEvaluatorVisitor";
 import { run } from "./InstructionRunner";
 import { TypeCheckerVisitor } from "./TypeCheckerVisitor";
+import { BorrowCheckerVisitor } from "./BorrowCheckerVisitor";
 
 export class CrustEvaluator extends BasicEvaluator {
   private evaluatorVisitor: CrustEvaluatorVisitor;
   private typeCheckerVisitor: TypeCheckerVisitor;
+  private borrowCheckerVisitor: BorrowCheckerVisitor;
 
   constructor(conductor: IRunnerPlugin) {
     super(conductor);
     this.typeCheckerVisitor = new TypeCheckerVisitor();
     this.evaluatorVisitor = new CrustEvaluatorVisitor();
+    this.borrowCheckerVisitor = new BorrowCheckerVisitor();
   }
 
   async evaluateChunk(chunk: string): Promise<void> {
@@ -33,6 +36,10 @@ export class CrustEvaluator extends BasicEvaluator {
 
       let type = this.typeCheckerVisitor.visit(tree);
       console.log("Type checking done:", type);
+
+      // this.borrowCheckerVisitor.visit(tree);
+      // console.log("Borrow checking done");
+
       this.evaluatorVisitor.visit(tree);
       const instrs = this.evaluatorVisitor.getInstrs();
       instrs.push({ tag: "DONE" });

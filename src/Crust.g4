@@ -72,7 +72,9 @@ expression:
 	| expression op = ('&&' | '||') expression // logical AND/OR
 	| lambdaExpr
 	| lambdaCall
-	| expression '.' methodCall;
+	| expression '.' methodCall
+	| '&' expression // Immutable reference
+    | '&mut' expression; // Mutable reference
 
 methodCall: 'to_string' '(' ')' | 'to_owned' '(' ')';
 lambdaExpr:
@@ -93,7 +95,9 @@ typeAnnotation:
 	| '&str' // implements copy
 	| 'String' // implements move
 	| 'i64'
-	| '()';
+	| '()'
+	| '&' typeAnnotation // Immutable reference
+    | '&mut' typeAnnotation; // Mutable reference
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;

@@ -21,7 +21,8 @@ import {
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
-import { typeMap, Type } from "./TypeCheckerVisitor";
+import { typeMap } from "./TypeCheckerVisitor";
+import { Type } from "./InstructionRunnerUtils/TypeUtils";
 export class CrustEvaluatorVisitor
   extends AbstractParseTreeVisitor<void>
   implements CrustVisitor<void>

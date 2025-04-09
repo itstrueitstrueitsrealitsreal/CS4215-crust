@@ -19,6 +19,14 @@ import {
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./Common";
+import {
+  FunctionType,
+  isFunctionType,
+  isTypeEqual,
+  parseType,
+  Type,
+  typeToString,
+} from "./InstructionRunnerUtils/TypeUtils";
 export const typeMap = new Map<string, Type>();
 export class TypeCheckerVisitor
   extends AbstractParseTreeVisitor<Type>
@@ -105,7 +113,7 @@ export class TypeCheckerVisitor
     if (ctx instanceof VarDeclContext) {
       // if it's a VarDecl, we read the user's type annotation
       const typeAnnotation = ctx.typeAnnotation().getText();
-      declaredType = this.parseType(typeAnnotation);
+      declaredType = parseType(typeAnnotation);
     } else {
       // if it's an assignment, we look up the variable's known type
       declaredType = this.lookupType(sym);
@@ -115,11 +123,11 @@ export class TypeCheckerVisitor
     const actualType = this.visit(ctx.expression());
 
     // compare
-    if (!this.isTypeEqual(actualType, declaredType)) {
+    if (!isTypeEqual(actualType, declaredType)) {
       throw new Error(
         `Type error in ${context} for '${sym}'; ` +
-          `declared type: ${this.typeToString(declaredType)}, ` +
-          `actual type: ${this.typeToString(actualType)}`
+          `declared type: ${typeToString(declaredType)}, ` +
+          `actual type: ${typeToString(actualType)}`
       );
     }
     return declaredType;
@@ -150,7 +158,7 @@ export class TypeCheckerVisitor
 
         locals.push({
           name: variableName,
-          type: this.parseType(typeAnnotation),
+          type: parseType(typeAnnotation),
         });
       }
       // Handle function declarations
@@ -163,14 +171,12 @@ export class TypeCheckerVisitor
           .typeAnnotation()
           ?.getText();
         const returnType: Type = returnTypeAnnotation
-          ? this.parseType(returnTypeAnnotation)
+          ? parseType(returnTypeAnnotation)
           : "()";
 
         const paramList = functionDeclContext.paramList();
         const paramTypes: Type[] = paramList
-          ? paramList
-              .typeAnnotation()
-              .map((type) => this.parseType(type.getText()))
+          ? paramList.typeAnnotation().map((type) => parseType(type.getText()))
           : [];
 
         // Create function type
@@ -307,13 +313,13 @@ export class TypeCheckerVisitor
 
       if (op === "!" && exprType !== "bool") {
         throw new Error(
-          `Type error in unary operation '!': Expected 'bool', got '${this.typeToString(
+          `Type error in unary operation '!': Expected 'bool', got '${typeToString(
             exprType
           )}'`
         );
       } else if (op === "-" && exprType !== "i64") {
         throw new Error(
-          `Type error in unary operation '-': Expected 'i64', got '${this.typeToString(
+          `Type error in unary operation '-': Expected 'i64', got '${typeToString(
             exprType
           )}'`
         );
@@ -342,20 +348,20 @@ export class TypeCheckerVisitor
           case "%":
             if (leftType !== "i64" || rightType !== "i64") {
               throw new Error(
-                `Type error in binary arithmetic operation: Expected 'i64' operands, got '${this.typeToString(
+                `Type error in binary arithmetic operation: Expected 'i64' operands, got '${typeToString(
                   leftType
-                )}' and '${this.typeToString(rightType)}'`
+                )}' and '${typeToString(rightType)}'`
               );
             }
             return "i64";
 
           case "==":
           case "!=":
-            if (!this.isTypeEqual(leftType, rightType)) {
+            if (!isTypeEqual(leftType, rightType)) {
               throw new Error(
-                `Type error in equality operation: Operands must be of the same type, got '${this.typeToString(
+                `Type error in equality operation: Operands must be of the same type, got '${typeToString(
                   leftType
-                )}' and '${this.typeToString(rightType)}'`
+                )}' and '${typeToString(rightType)}'`
               );
             }
             return "bool";
@@ -366,9 +372,9 @@ export class TypeCheckerVisitor
           case ">=":
             if (leftType !== "i64" || rightType !== "i64") {
               throw new Error(
-                `Type error in comparison operation: Expected 'i64' operands, got '${this.typeToString(
+                `Type error in comparison operation: Expected 'i64' operands, got '${typeToString(
                   leftType
-                )}' and '${this.typeToString(rightType)}'`
+                )}' and '${typeToString(rightType)}'`
               );
             }
             return "bool";
@@ -377,9 +383,9 @@ export class TypeCheckerVisitor
           case "||":
             if (leftType !== "bool" || rightType !== "bool") {
               throw new Error(
-                `Type error in logical operation: Expected 'bool' operands, got '${this.typeToString(
+                `Type error in logical operation: Expected 'bool' operands, got '${typeToString(
                   leftType
-                )}' and '${this.typeToString(rightType)}'`
+                )}' and '${typeToString(rightType)}'`
               );
             }
             return "bool";
@@ -400,7 +406,7 @@ export class TypeCheckerVisitor
       const exprType = this.visit(expr);
       // All basic types are fine for string interpolation
       // For complex types like functions, we might want to be more restrictive
-      if (this.isFunctionType(exprType)) {
+      if (isFunctionType(exprType)) {
         throw new Error(`Cannot interpolate function type in format string`);
       }
     }
@@ -450,7 +456,7 @@ export class TypeCheckerVisitor
     const body = ctx.blockStmt();
 
     const returnType: Type = returnTypeAnnotation
-      ? this.parseType(returnTypeAnnotation)
+      ? parseType(returnTypeAnnotation)
       : "()"; // Default to void if no return type is specified
 
     const paramTypes: { name: string; type: Type }[] = paramList
@@ -461,7 +467,7 @@ export class TypeCheckerVisitor
               `Missing type annotation for parameter '${id.getText()}'`
             );
           }
-          return { name: id.getText(), type: this.parseType(typeAnnotation) };
+          return { name: id.getText(), type: parseType(typeAnnotation) };
         })
       : [];
 
@@ -480,12 +486,12 @@ export class TypeCheckerVisitor
     // Reset function return type
     this.currentFunctionReturnType = previousFunctionReturnType;
 
-    if (!this.isTypeEqual(bodyType, returnType)) {
+    if (!isTypeEqual(bodyType, returnType)) {
       throw new Error(
         `Type error in function '${functionName}': ` +
-          `declared return type is '${this.typeToString(
+          `declared return type is '${typeToString(
             returnType
-          )}', but body returns '${this.typeToString(bodyType)}'`
+          )}', but body returns '${typeToString(bodyType)}'`
       );
     }
     this.globalTypeEnvironment = previousEnvironment;
@@ -500,7 +506,7 @@ export class TypeCheckerVisitor
       ? paramList.IDENTIFIER().map((id) => id.getText())
       : [];
     const paramTypes: Type[] = paramList
-      ? paramList.typeAnnotation().map((type) => this.parseType(type.getText()))
+      ? paramList.typeAnnotation().map((type) => parseType(type.getText()))
       : [];
 
     // Create param name-type pairs for environment extension
@@ -546,9 +552,9 @@ export class TypeCheckerVisitor
     const lambdaType = this.lookupType(lambdaName);
 
     // Ensure the lambda has a function type
-    if (!this.isFunctionType(lambdaType)) {
+    if (!isFunctionType(lambdaType)) {
       throw new Error(
-        `Type error in lambda call: '${lambdaName}' is not a function. Actual type: ${this.typeToString(
+        `Type error in lambda call: '${lambdaName}' is not a function. Actual type: ${typeToString(
           lambdaType
         )}`
       );
@@ -571,12 +577,12 @@ export class TypeCheckerVisitor
     for (let i = 0; i < actualArgTypes.length; i++) {
       const expectedType = (lambdaType as FunctionType).params[i];
       const actualType = actualArgTypes[i];
-      if (!this.isTypeEqual(expectedType, actualType)) {
+      if (!isTypeEqual(expectedType, actualType)) {
         throw new Error(
           `Type error in lambda call: Argument ${
             i + 1
-          } of '${lambdaName}' has type '${this.typeToString(actualType)}', ` +
-            `but expected '${this.typeToString(expectedType)}'.`
+          } of '${lambdaName}' has type '${typeToString(actualType)}', ` +
+            `but expected '${typeToString(expectedType)}'.`
         );
       }
     }
@@ -591,131 +597,22 @@ export class TypeCheckerVisitor
     // Check if return type matches function return type
     if (
       this.currentFunctionReturnType !== null &&
-      !this.isTypeEqual(returnExprType, this.currentFunctionReturnType)
+      !isTypeEqual(returnExprType, this.currentFunctionReturnType)
     ) {
       throw new Error(
-        `Type error in return statement: expected type '${this.typeToString(
+        `Type error in return statement: expected type '${typeToString(
           this.currentFunctionReturnType
-        )}', ` + `but got '${this.typeToString(returnExprType)}'`
+        )}', ` + `but got '${typeToString(returnExprType)}'`
       );
     }
 
     return returnExprType;
   }
 
-  private parseType(typeAnnotation: string): Type {
-    // Handle basic types
-    switch (typeAnnotation) {
-      case "bool":
-      case "char":
-      case "&str":
-      case "String":
-      case "i64":
-      case "()":
-        return typeAnnotation;
-    }
-
-    // Handle function types (if represented in the form "fn(param1, param2) -> returnType")
-    if (typeAnnotation.startsWith("fn(") && typeAnnotation.includes(") -> ")) {
-      const paramsPart = typeAnnotation.substring(
-        3,
-        typeAnnotation.indexOf(") -> ")
-      );
-      const returnTypePart = typeAnnotation.substring(
-        typeAnnotation.indexOf(") -> ") + 5
-      );
-
-      // Parse parameter types
-      const paramTypes: Type[] =
-        paramsPart.trim() === ""
-          ? []
-          : paramsPart.split(",").map((param) => this.parseType(param.trim()));
-
-      // Parse return type
-      const returnType = this.parseType(returnTypePart.trim());
-
-      return {
-        params: paramTypes,
-        returnType: returnType,
-      };
-    }
-
-    throw new Error(`Unrecognized type annotation: ${typeAnnotation}`);
-  }
-
-  // Helper function to check if a type is a function type
-  private isFunctionType(type: Type): type is FunctionType {
-    return typeof type === "object" && "params" in type && "returnType" in type;
-  }
-
-  // Helper function to check if two types are equal
-  private isTypeEqual(type1: Type, type2: Type): boolean {
-    // If both are primitive types, simple comparison
-    if (typeof type1 === "string" && typeof type2 === "string") {
-      return type1 === type2;
-    }
-
-    // If one is primitive and the other is not, they can't be equal
-    if (typeof type1 !== typeof type2) {
-      return false;
-    }
-
-    // Both are function types
-    if (this.isFunctionType(type1) && this.isFunctionType(type2)) {
-      // Check if they have the same number of parameters
-      if (type1.params.length !== type2.params.length) {
-        return false;
-      }
-
-      // Check if all parameter types are equal
-      for (let i = 0; i < type1.params.length; i++) {
-        if (!this.isTypeEqual(type1.params[i], type2.params[i])) {
-          return false;
-        }
-      }
-
-      // Check if return types are equal
-      return this.isTypeEqual(type1.returnType, type2.returnType);
-    }
-
-    return false;
-  }
-
-  // Helper function to convert a type to a string representation for error messages
-  private typeToString(type: Type): string {
-    if (typeof type === "string") {
-      return type;
-    }
-
-    if (this.isFunctionType(type)) {
-      const paramsStr = type.params
-        .map((param) => this.typeToString(param))
-        .join(", ");
-      const returnTypeStr = this.typeToString(type.returnType);
-      return `fn(${paramsStr}) -> ${returnTypeStr}`;
-    }
-
-    return JSON.stringify(type);
-  }
-
   // Override the default result method.
   protected defaultResult(): Type {
     return "()"; // Default to void for statements
   }
-}
-
-export type Type =
-  | "bool"
-  | "char"
-  | "&str"
-  | "String"
-  | "i64"
-  | "()"
-  | FunctionType;
-
-export interface FunctionType {
-  params: Type[];
-  returnType: Type;
 }
 
 type TypeEnvironment = Map<string, Type>[];
