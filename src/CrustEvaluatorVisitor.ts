@@ -345,9 +345,6 @@ export class CrustEvaluatorVisitor
           tag: "LD",
           pos: [frameIndex, valueIndex],
         };
-        if (this.isMoveType(varEntry.type)) {
-          this.removeSymbolFromEnvironment(frameIndex, valueIndex);
-        }
       } else if (ctx.getChild(0) instanceof FormatExprContext) {
         this.visit(ctx.getChild(0));
       } else if (ctx.getChild(0) instanceof LambdaCallContext) {
@@ -640,12 +637,6 @@ export class CrustEvaluatorVisitor
         console.log(`  ${name} (mutable: ${mutable})`);
       }
     }
-  }
-  private removeSymbolFromEnvironment(
-    frameIndex: number,
-    valueIndex: number
-  ): void {
-    this.global_compile_environment[frameIndex].splice(valueIndex, 1);
   }
 
   // Override the default result method.
