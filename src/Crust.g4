@@ -6,6 +6,7 @@ prog: (statement)+ EOF;
 statement:
 	exprStmt
 	| varDecl
+	| derefAssignStmt
 	| assignmentStmt
 	| ifStmt
 	| whileStmt
@@ -21,6 +22,7 @@ varDecl:
 	'let' ('mut')? IDENTIFIER ':' typeAnnotation ('=' expression)? ';';
 // Assignment statement supports both plain assignment and compound assignment.
 assignmentStmt: IDENTIFIER assignOp expression ';';
+derefAssignStmt: '*' expression '=' expression ';';
 
 assignOp:
 	'='
@@ -55,26 +57,28 @@ functionDecl:
 	'fn' IDENTIFIER '(' paramList? ')' ('->' typeAnnotation)? blockStmt;
 
 expression:
-	formatExpr
-	| literal
-	| IDENTIFIER
-	| '(' expression ')'
-	| '-' expression // unary minus
-	| '!' expression // logical not
-	| expression op = ('*' | '/' | '%') expression // multiplicative: *, /, %
-	| expression op = ('+' | '-') expression // additive: +, -
-	| expression op = ('<<' | '>>') expression // bit-shift: <<, >>
-	| expression op = ('<' | '<=' | '>' | '>=') expression // relational: <, <=, >, >=
-	| expression op = ('==' | '!=') expression // equality: ==, !=
-	| expression op = '&' expression // bitwise AND
-	| expression op = '^' expression // bitwise XOR
-	| expression op = '|' expression // bitwise OR
-	| expression op = ('&&' | '||') expression // logical AND/OR
-	| lambdaExpr
-	| lambdaCall
-	| expression '.' methodCall
-	| '&' expression // Immutable reference
-    | '&mut' expression; // Mutable reference
+    formatExpr
+    | literal
+    | IDENTIFIER
+    | '(' expression ')'
+    | '-' expression                         // unary minus
+    | '!' expression                         // logical not
+    | '*' expression                         // Dereference
+    | '&' 'mut' expression                   // Mutable reference (separate rules)
+    | '&' expression                         // Immutable reference
+    | expression op = ('*' | '/' | '%') expression     // multiplicative
+    | expression op = ('+' | '-') expression           // additive
+    | expression op = ('<<' | '>>') expression         // bit-shift
+    | expression op = ('<' | '<=' | '>' | '>=') expression  // relational
+    | expression op = ('==' | '!=') expression         // equality
+    | expression op = '&' expression                   // bitwise AND (single &)
+    | expression op = '^' expression                   // bitwise XOR
+    | expression op = '|' expression                   // bitwise OR
+    | expression '&' '&' expression              // Use '&' '&' instead of '&&'
+    | expression '|' '|' expression              // Use '|' '|' instead of '||'
+    | lambdaExpr
+    | lambdaCall
+    | expression '.' methodCall;
 
 methodCall: 'to_string' '(' ')' | 'to_owned' '(' ')';
 lambdaExpr:
@@ -97,7 +101,7 @@ typeAnnotation:
 	| 'i64'
 	| '()'
 	| '&' typeAnnotation // Immutable reference
-    | '&mut' typeAnnotation; // Mutable reference
+    | '&' 'mut' typeAnnotation; // Mutable reference
 
 literal: INT | BOOL | CHAR | STRING;
 INT: [0-9]+;

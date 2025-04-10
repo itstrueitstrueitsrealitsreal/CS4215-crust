@@ -5,11 +5,28 @@ export type Type =
   | "String"
   | "i64"
   | "()"
-  | FunctionType;
+  | FunctionType
+  | ReferenceType
+  | MutableReferenceType
+  | DereferenceType;
 
 export interface FunctionType {
   params: Type[];
   returnType: Type;
+}
+export interface ReferenceType {
+  kind: "reference";
+  inner: Type; // The type being referenced
+}
+
+export interface MutableReferenceType {
+  kind: "mutable_reference";
+  inner: Type; // The type being mutably referenced
+}
+
+export interface DereferenceType {
+  kind: "dereference";
+  inner: Type; // The type being dereferenced
 }
 
 // Helper function to check if a type is a function type
@@ -29,7 +46,27 @@ export function parseType(typeAnnotation: string): Type {
     case "()":
       return typeAnnotation;
   }
+  console.log("Parsing type:", typeAnnotation);
+  // Handle mutable reference types (e.g., &mut T)
+  if (typeAnnotation.startsWith("&mut")) {
+    console.log("Parsing mutable reference type:", typeAnnotation.substring(4).trim());
+    const innerType = parseType(typeAnnotation.substring(4).trim());
+    return { kind: "mutable_reference", inner: innerType };
+  }
 
+  if (typeAnnotation.startsWith("&")) {
+    console.log("Parsing reference type:", typeAnnotation.substring(1).trim());
+    const innerType = parseType(typeAnnotation.substring(1).trim());
+    return { kind: "reference", inner: innerType };
+  }
+
+  // Handle dereference types (e.g., *T)
+  if (typeAnnotation.startsWith("*")) {
+    console.log("Parsing dereference type:", typeAnnotation.substring(1).trim());
+    const innerType = parseType(typeAnnotation.substring(1).trim());
+    console.log("Parsed dereference type:", innerType);
+    return { kind: "dereference", inner: innerType };
+  }
   // Handle function types (if represented in the form "fn(param1, param2) -> returnType")
   if (typeAnnotation.startsWith("fn(") && typeAnnotation.includes(") -> ")) {
     const paramsPart = typeAnnotation.substring(
@@ -60,6 +97,7 @@ export function parseType(typeAnnotation: string): Type {
 
 // Helper function to check if two types are equal
 export function isTypeEqual(type1: Type, type2: Type): boolean {
+  console.log("comparing types:", type1, type2);
   // If both are primitive types, simple comparison
   if (typeof type1 === "string" && typeof type2 === "string") {
     return type1 === type2;
@@ -88,6 +126,32 @@ export function isTypeEqual(type1: Type, type2: Type): boolean {
     return isTypeEqual(type1.returnType, type2.returnType);
   }
 
+  // Both are reference types
+  if (
+    isReferenceType(type1) &&
+    isReferenceType(type2) &&
+    isTypeEqual(type1.inner, type2.inner)
+  ) {
+    return true;
+  }
+
+  // Both are mutable reference types
+  if (
+    isMutableReferenceType(type1) &&
+    isMutableReferenceType(type2) &&
+    isTypeEqual(type1.inner, type2.inner)
+  ) {
+    return true;
+  }
+
+  // Both are dereference types
+  if (
+    isDereferenceType(type1) &&
+    isDereferenceType(type2) &&
+    isTypeEqual(type1.inner, type2.inner)
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -104,6 +168,17 @@ export function typeToString(type: Type): string {
     const returnTypeStr = typeToString(type.returnType);
     return `fn(${paramsStr}) -> ${returnTypeStr}`;
   }
+  if (isReferenceType(type)) {
+    return `&${typeToString(type.inner)}`;
+  }
+
+  if (isMutableReferenceType(type)) {
+    return `&mut ${typeToString(type.inner)}`;
+  }
+
+  if (isDereferenceType(type)) {
+    return `*${typeToString(type.inner)}`;
+  }
 
   return JSON.stringify(type);
 }
@@ -113,4 +188,16 @@ export function isCopyType(type: Type): boolean {
   return (
     type === "bool" || type === "char" || type === "&str" || type === "i64"
   );
+}
+
+export function isReferenceType(type: Type): type is ReferenceType {
+  return typeof type === "object" && 'kind' in type && type.kind === "reference";
+}
+
+export function isMutableReferenceType(type: Type): type is MutableReferenceType {
+  return typeof type === "object" && 'kind' in type && type.kind === "mutable_reference";
+}
+
+export function isDereferenceType(type: Type): type is DereferenceType {
+  return typeof type === "object" && 'kind' in type && type.kind === "dereference";
 }
