@@ -16,6 +16,7 @@ import {
   IfStmtContext,
   WhileStmtContext,
   MethodCallContext,
+  DerefAssignStmtContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./utils/Common";
@@ -155,7 +156,6 @@ export class TypeCheckerVisitor
         const varDeclContext = statementCtx.getChild(0) as VarDeclContext;
         const variableName = varDeclContext.IDENTIFIER().getText();
         const typeAnnotation = varDeclContext.typeAnnotation().getText();
-
         locals.push({
           name: variableName,
           type: parseType(typeAnnotation),
@@ -270,28 +270,64 @@ export class TypeCheckerVisitor
     throw new Error(`Unsupported method: '${methodName}'`);
   }
   visitExpression(ctx: ExpressionContext): Type {
-    if (
-      ctx.getChildCount() === 3 &&
-      ctx.getChild(1).getText() === "." &&
-      ctx.methodCall() !== undefined // or ctx.methodCall() != null
-    ) {
-      // base expression is child(0)
+    // Handle identifiers
+    if (ctx.IDENTIFIER()) {
+      const sym = ctx.IDENTIFIER().getText();
+      const type = this.lookupType(sym);
+      return type;
+    }
+    
+    // Special case for &mut (two separate tokens)
+    if (ctx.getChildCount() >= 3 && 
+        ctx.getChild(0).getText() === '&' && 
+        ctx.getChild(1).getText() === 'mut') {
+      const innerExpression = ctx.getChild(2) as ExpressionContext;
+      return this.handleReferenceOperator('&mut', innerExpression);
+    }
+    
+    // Handle unary operators with similar structure
+    if (ctx.getChildCount() === 2) {
+      const op = ctx.getChild(0).getText();
+      const innerExpression = ctx.getChild(1) as ExpressionContext;
+      
+      // Regular reference and dereference operators
+      if (op === "*" || op === "&") {
+        return this.handleReferenceOperator(op, innerExpression);
+      }
+      
+      // Handle other unary operators
+      const exprType = this.visit(ctx.expression(0));
+      
+      if (op === "!" && exprType !== "bool") {
+        throw new Error(`Type error in unary operation '!': Expected 'bool', got '${typeToString(exprType)}'`);
+      } else if (op === "-" && exprType !== "i64") {
+        throw new Error(`Type error in unary operation '-': Expected 'i64', got '${typeToString(exprType)}'`);
+      }
+      
+      return op === "!" ? "bool" : exprType;
+    }
+    
+    // Handle method calls
+    if (ctx.getChildCount() === 3 && ctx.getChild(1).getText() === "." && ctx.methodCall() !== undefined) {
       const baseType = this.visit(ctx.getChild(0) as ExpressionContext);
-
-      // Store the base type for use in visitMethodCall
       this.currentBaseType = baseType;
-
-      // methodCall is child(2)
       const methodCtx = ctx.methodCall();
-      // call our helper
       const result = this.visitMethodCall(methodCtx);
-
-      // Clean up after method call
       this.currentBaseType = null;
-
       return result;
-      return this.visitMethodCall(methodCtx);
-    } else if (ctx.getChildCount() === 1) {
+    }
+    
+    // Handle parenthesized expressions and binary operators
+    if (ctx.getChildCount() === 3) {
+      if (ctx.getChild(0).getText() === "(" && ctx.getChild(2).getText() === ")") {
+        return this.visit(ctx.expression(0));
+      } else {
+        return this.handleBinaryOperator(ctx);
+      }
+    }
+    
+    // Handle single-child expressions
+    if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
         return this.visit(ctx.getChild(0) as LiteralContext);
       } else if (ctx.IDENTIFIER()) {
@@ -303,100 +339,142 @@ export class TypeCheckerVisitor
         return this.visit(ctx.getChild(0) as LambdaCallContext);
       } else if (ctx.getChild(0) instanceof LambdaExprContext) {
         return this.visit(ctx.getChild(0) as LambdaExprContext);
-      } else {
-        throw new Error(`Invalid expression: ${ctx.getText()}`);
       }
-    } else if (ctx.getChildCount() === 2) {
-      // Unary operator: e.g., '-' expression or '!' expression.
-      const op = ctx.getChild(0).getText();
-      const exprType = this.visit(ctx.expression(0));
-
-      if (op === "!" && exprType !== "bool") {
-        throw new Error(
-          `Type error in unary operation '!': Expected 'bool', got '${typeToString(
-            exprType
-          )}'`
-        );
-      } else if (op === "-" && exprType !== "i64") {
-        throw new Error(
-          `Type error in unary operation '-': Expected 'i64', got '${typeToString(
-            exprType
-          )}'`
-        );
-      }
-
-      return op === "!" ? "bool" : exprType;
-    } else if (ctx.getChildCount() === 3) {
-      if (
-        ctx.getChild(0).getText() === "(" &&
-        ctx.getChild(2).getText() === ")"
-      ) {
-        // Parenthesized expression.
-        return this.visit(ctx.expression(0));
-      } else {
-        // Binary operator: compile left and right operands.
-        const leftType = this.visit(ctx.expression(0));
-        const rightType = this.visit(ctx.expression(1));
-        const op = ctx.getChild(1).getText();
-
-        // Type check binary operations
-        switch (op) {
-          case "+":
-          case "-":
-          case "*":
-          case "/":
-          case "%":
-            if (leftType !== "i64" || rightType !== "i64") {
-              throw new Error(
-                `Type error in binary arithmetic operation: Expected 'i64' operands, got '${typeToString(
-                  leftType
-                )}' and '${typeToString(rightType)}'`
-              );
-            }
-            return "i64";
-
-          case "==":
-          case "!=":
-            if (!isTypeEqual(leftType, rightType)) {
-              throw new Error(
-                `Type error in equality operation: Operands must be of the same type, got '${typeToString(
-                  leftType
-                )}' and '${typeToString(rightType)}'`
-              );
-            }
-            return "bool";
-
-          case "<":
-          case ">":
-          case "<=":
-          case ">=":
-            if (leftType !== "i64" || rightType !== "i64") {
-              throw new Error(
-                `Type error in comparison operation: Expected 'i64' operands, got '${typeToString(
-                  leftType
-                )}' and '${typeToString(rightType)}'`
-              );
-            }
-            return "bool";
-
-          case "&&":
-          case "||":
-            if (leftType !== "bool" || rightType !== "bool") {
-              throw new Error(
-                `Type error in logical operation: Expected 'bool' operands, got '${typeToString(
-                  leftType
-                )}' and '${typeToString(rightType)}'`
-              );
-            }
-            return "bool";
-
-          default:
-            throw new Error(`Unsupported binary operator: ${op}`);
-        }
-      }
-    } else {
-      throw new Error(`Invalid expression: ${ctx.getText()}`);
     }
+    
+    throw new Error(`Invalid expression: ${ctx.getText()}`);
+  }
+  
+  // Helper method for reference operators
+  private handleReferenceOperator(op: string, innerExpression: ExpressionContext): Type {
+    // For reference operators (& and &mut)
+    if (op === "&" || op === "&mut") {
+      // Get the type of the inner expression
+      const innerType = this.visit(innerExpression);
+      
+      // Create reference type wrapping the full inner type
+      return { 
+        kind: op === "&mut" ? "mutable_reference" : "reference", 
+        inner: innerType 
+      };
+    }
+    
+    // For dereference (*)
+    if (op === "*") {
+      const innerType = this.visit(innerExpression);
+      // this.logReferenceDebug(innerType);
+      
+      if (!this.isReferenceType(innerType)) {
+        throw new Error(`Cannot dereference non-reference type: ${typeToString(innerType)}`);
+      }
+      
+      return innerType.inner;
+    }
+    
+    throw new Error(`Unsupported reference operator: ${op}`);
+  }
+  
+  // Helper for binary operators
+  private handleBinaryOperator(ctx: ExpressionContext): Type {
+    const leftType = this.visit(ctx.expression(0));
+    const rightType = this.visit(ctx.expression(1));
+    const op = ctx.getChild(1).getText();
+  
+    switch (op) {
+      case "+":
+      case "-":
+      case "*":
+      case "/":
+      case "%":
+        if (leftType !== "i64" || rightType !== "i64") {
+          throw new Error(`Type error in binary arithmetic operation: Expected 'i64' operands, got '${typeToString(leftType)}' and '${typeToString(rightType)}'`);
+        }
+        return "i64";
+  
+      case "==":
+      case "!=":
+        if (!isTypeEqual(leftType, rightType)) {
+          throw new Error(`Type error in equality operation: Operands must be of the same type, got '${typeToString(leftType)}' and '${typeToString(rightType)}'`);
+        }
+        return "bool";
+  
+      case "<":
+      case ">":
+      case "<=":
+      case ">=":
+        if (leftType !== "i64" || rightType !== "i64") {
+          throw new Error(`Type error in comparison operation: Expected 'i64' operands, got '${typeToString(leftType)}' and '${typeToString(rightType)}'`);
+        }
+        return "bool";
+  
+      case "&&":
+      case "||":
+        if (leftType !== "bool" || rightType !== "bool") {
+          throw new Error(`Type error in logical operation: Expected 'bool' operands, got '${typeToString(leftType)}' and '${typeToString(rightType)}'`);
+        }
+        return "bool";
+  
+      default:
+        throw new Error(`Unsupported binary operator: ${op}`);
+    }
+  }
+  
+  // Helper to check if a type is a reference type
+  private isReferenceType(type: Type): type is Type & { kind: "reference" | "mutable_reference"; inner: Type } {
+    return typeof type === "object" && 
+           type !== null && 
+           "kind" in type && 
+           (type.kind === "reference" || type.kind === "mutable_reference");
+  }
+  
+  // Helper to log debug information for references
+  private logReferenceDebug(innerType: Type): void {
+    console.log("DEBUG - innerType:", JSON.stringify(innerType));
+    console.log("DEBUG - typeof innerType:", typeof innerType);
+    
+    if (typeof innerType === "object" && innerType !== null && "kind" in innerType) {
+      console.log("DEBUG - innerType.kind:", innerType.kind);
+      console.log("DEBUG - innerType.inner:", JSON.stringify(innerType.inner));
+    }
+  }
+  visitDerefAssignStmt(ctx: DerefAssignStmtContext): Type {
+    
+    // Access expressions safely through children
+    // The DerefAssignStmt has the structure: '*' expression '=' expression ';'
+    // So the expressions are at index 1 and 3
+    const refExpr = ctx.getChild(1);
+    const valueExpr = ctx.getChild(3);
+    
+    if (!(refExpr instanceof ExpressionContext) || !(valueExpr instanceof ExpressionContext)) {
+      console.error("Unexpected structure in DerefAssignStmt:", ctx.getText());
+      return "()";
+    }
+    
+    // Check that we're dereferencing a mutable reference
+    const refType = this.visit(refExpr);
+    
+    if (typeof refType !== "object" || 
+        refType === null || 
+        !("kind" in refType)) {
+      throw new Error(`Cannot dereference non-reference type: ${typeToString(refType)}`);
+    }
+    
+    if (refType.kind !== "mutable_reference") {
+      throw new Error(`Cannot assign through immutable reference: ${typeToString(refType)}`);
+    }
+    
+    // Verify type compatibility
+    const valueType = this.visit(valueExpr);
+    const targetType = refType.inner;
+    
+    if (!isTypeEqual(valueType, targetType)) {
+      throw new Error(
+        `Type mismatch in dereference assignment: ` +
+        `expected ${typeToString(targetType)}, got ${typeToString(valueType)}`
+      );
+    }
+    
+    return "()";
   }
   visitFormatExpr(ctx: FormatExprContext): Type {
     // Make sure all expressions in the string interpolation are valid

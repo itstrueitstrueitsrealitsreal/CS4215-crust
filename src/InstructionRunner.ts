@@ -36,6 +36,8 @@ const Environment_tag = 10;
 const Pair_tag = 11;
 const Builtin_tag = 12;
 const String_tag = 13; // ADDED CHANGE
+const Reference_tag = 14; // ADDED CHANGE
+const MutableReference_tag = 15; // ADDED CHANGE
 // Record<string, tuple(number, string)< where the key is the hash of the string
 // and the value is a tuple of the address of the string and the string itself
 let stringPool = {}; // ADDED CHANGE
@@ -194,6 +196,32 @@ const heap_Environment_extend = (frame_address, env_address) => {
   heap_set_child(new_env_address, i, frame_address);
   return new_env_address;
 };
+
+// Add reference allocation functions
+const heap_allocate_Reference = (inner, frameIndex, valueIndex) => {
+  const reference_address = heap_allocate(Reference_tag, 4);  // 4 words: tag + 3 values
+  heap_set(reference_address + 1, inner);             // Store inner value/address
+  heap_set(reference_address + 2, frameIndex);        // Store frame index
+  heap_set(reference_address + 3, valueIndex);        // Store value index
+  return reference_address;
+};
+
+const heap_allocate_MutableReference = (inner, frameIndex, valueIndex) => {
+  const reference_address = heap_allocate(MutableReference_tag, 4);  // 4 words
+  heap_set(reference_address + 1, inner);             // Store inner value/address
+  heap_set(reference_address + 2, frameIndex);        // Store frame index
+  heap_set(reference_address + 3, valueIndex);        // Store value index
+  return reference_address;
+};
+
+// Add helper functions to check and extract reference data
+const is_Reference = (address) => heap_get_tag(address) === Reference_tag;
+const is_MutableReference = (address) => heap_get_tag(address) === MutableReference_tag;
+const is_AnyReference = (address) => is_Reference(address) || is_MutableReference(address);
+
+const heap_get_Reference_inner = (address) => heap_get(address + 1);
+const heap_get_Reference_frameIndex = (address) => heap_get(address + 2);
+const heap_get_Reference_valueIndex = (address) => heap_get(address + 3);
 
 // all values (including literals) are allocated on the heap.
 // We allocate canonical values for true, false, undefined, null, and unassigned
@@ -367,7 +395,63 @@ HEAP; // (declared above already)
 
 const microcode = {
   LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
-  UNOP: (instr) => push(OS, apply_unop(instr.sym, OS.pop())),
+  UNOP: (instr) => {
+    const value = OS.pop();
+    
+    // For reference operators (&mut or &)
+    if (instr.sym === "&" || instr.sym === "&mut") {
+      if (instr.varInfo) {
+        // Create a reference object
+        const refObj = {
+          kind: instr.sym === "&mut" ? "mutable_reference" : "reference",
+          inner: address_to_JS_value(value), // Keep the full value structure
+          frameIndex: instr.varInfo.frameIndex,
+          valueIndex: instr.varInfo.valueIndex
+        };
+        
+        // Store the reference
+        push(OS, JS_value_to_address(refObj));
+        return;
+      }
+    }
+    
+    // For dereference operator (*)
+    if (instr.sym === "*") {
+      const jsValue = address_to_JS_value(value);
+      
+      if (typeof jsValue === "object" && jsValue !== null &&
+          (jsValue.kind === "reference" || jsValue.kind === "mutable_reference")) {
+        
+        // For nested references
+        if (typeof jsValue.inner === "object" && jsValue.inner !== null && 
+            (jsValue.inner.kind === "reference" || jsValue.inner.kind === "mutable_reference")) {
+          // Return the inner reference structure to be dereferenced again
+          push(OS, JS_value_to_address(jsValue.inner));
+          return;
+        }
+        
+        // For simple references to values
+        if (jsValue.frameIndex !== undefined && jsValue.valueIndex !== undefined) {
+          const actualValue = heap_get_Environment_value(E, [jsValue.frameIndex, jsValue.valueIndex]);
+          push(OS, actualValue);
+          return;
+        }
+        
+        // If we get here, we have a reference but no frame info - try using the inner value directly
+        if (jsValue.inner !== undefined) {
+          console.log("Using inner value directly:", jsValue.inner);
+          push(OS, JS_value_to_address(jsValue.inner));
+          return;
+        }
+      }
+      
+      console.warn("Not a proper reference for dereferencing:", jsValue);
+      throw new Error(`Cannot dereference non-reference type: ${jsValue}`);
+    }
+    
+    // Normal case for other operators
+    push(OS, apply_unop(instr.sym, value));
+  },
   BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
   POP: (instr) => OS.pop(),
   JOF: (instr) => {
@@ -479,6 +563,29 @@ const microcode = {
     const strVal = String(jsVal);
     push(OS, JS_value_to_address(strVal));
   },
+  DEREF_ASSIGN: (instr) => {
+    const refValue = OS.pop();  // The reference
+    const newValue = OS.pop();  // The new value (FIX: pop it, don't just peek)
+    
+    // Convert reference to JS object
+    const jsRef = address_to_JS_value(refValue);
+    
+    if (typeof jsRef !== "object" || jsRef === null || 
+        (jsRef.kind !== "reference" && jsRef.kind !== "mutable_reference")) {
+      throw new Error("Can only assign through mutable references");
+    }
+    
+    if (jsRef.kind !== "mutable_reference") {
+      throw new Error("Cannot assign through immutable reference");
+    }
+    
+    // Update the original variable through the reference
+    if (jsRef.frameIndex !== undefined && jsRef.valueIndex !== undefined) {
+      heap_set_Environment_value(E, [jsRef.frameIndex, jsRef.valueIndex], newValue);
+    } else {
+      throw new Error("Reference doesn't contain valid location information");
+    }
+  }
 };
 
 const apply_binop = (op, v2, v1) =>
@@ -495,14 +602,33 @@ const apply_unop = (op, v) => {
 // conversions between addresses and JS_value
 //
 const address_to_JS_value = (x) => {
+  // Handle undefined or invalid addresses
+  if (x === undefined) return undefined;
+  
+  // Handle reference types stored in the heap
+  if (is_AnyReference(x)) {
+    const refKind = is_MutableReference(x) ? "mutable_reference" : "reference";
+    const refInner = heap_get_Reference_inner(x);
+    const frameIndex = heap_get_Reference_frameIndex(x);
+    const valueIndex = heap_get_Reference_valueIndex(x);
+    
+    return {
+      kind: refKind,
+      inner: address_to_JS_value(refInner), // RECURSIVE call to handle nested references
+      frameIndex: frameIndex,
+      valueIndex: valueIndex
+    };
+  }
+  
+  // Handle existing types
   if (is_Number(x)) return heap_get(x + 1);
   if (is_Boolean(x)) return is_True(x);
   if (is_String(x)) return heap_get_string(x);
   if (is_Undefined(x)) return undefined;
   if (is_Null(x)) return null;
-  if (is_Closure(x)) return "<closure>";
-  // Add other type conversions as needed
-  throw new Error(`Cannot convert address ${x} to JS value`);
+  
+  // Return a reasonable value instead of throwing
+  return undefined;
 };
 // is_Boolean(x)
 // 	? is_True(x)
@@ -528,13 +654,43 @@ const address_to_JS_value = (x) => {
 // : "unknown word tag: " + word_to_string(x);
 
 const JS_value_to_address = (x) => {
+  // Basic types
   if (typeof x === "number") return heap_allocate_Number(x);
   if (typeof x === "boolean") return x ? True : False;
   if (typeof x === "string") return heap_allocate_String(x);
   if (x === undefined) return Undefined;
   if (x === null) return Null;
-  // Add other type conversions as needed
-  throw new Error(`Cannot convert JS value ${x} to address`);
+  
+  // Handle reference objects
+  if (typeof x === "object" && x !== null && x.kind) {
+    if (x.kind === "mutable_reference" || x.kind === "reference") {
+      // Handle the inner value - it could be another reference
+      const innerValue = x.inner;
+      const innerAddress = JS_value_to_address(innerValue); // RECURSIVELY convert inner value
+      
+      // For references to variables (with frame/value indices)
+      if (x.frameIndex !== undefined && x.valueIndex !== undefined) {
+        if (x.kind === "mutable_reference") {
+          return heap_allocate_MutableReference(innerAddress, x.frameIndex, x.valueIndex);
+        } else {
+          return heap_allocate_Reference(innerAddress, x.frameIndex, x.valueIndex); 
+        }
+      }
+      
+      // For references to other references (without frame/value indices)
+      // We set default indices of 0, which won't be used when dereferencing
+      else {
+        if (x.kind === "mutable_reference") {
+          return heap_allocate_MutableReference(innerAddress, 0, 0);
+        } else {
+          return heap_allocate_Reference(innerAddress, 0, 0);
+        }
+      }
+    }
+  }
+  
+  console.warn("Cannot convert JS value to address:", x);
+  throw new Error(`Cannot convert JS value to address: ${JSON.stringify(x)}`);
 };
 // const JS_value_to_address = (x) =>
 //   is_boolean(x)

@@ -136,6 +136,22 @@ export const unop_microcode = {
     if (!is_boolean(x)) throw new Error("Unary ! expects a boolean");
     return !x;
   },
+  "&mut": (x) => {
+    // This will be handled by the UNOP instruction handler
+    return { kind: "mutable_reference", inner: x };
+  },
+  "&": (x) => {
+    // This will be handled by the UNOP instruction handler
+    return { kind: "reference", inner: x };
+  },
+  "*": (x) => {
+    // This will be handled by the UNOP instruction handler
+    if (typeof x === "object" && x !== null && 
+        (x.kind === "reference" || x.kind === "mutable_reference")) {
+      return x.inner;
+    }
+    throw new Error(`Cannot dereference non-reference type: ${JSON.stringify(x)}`);
+  }
 };
 
 const is_boolean = (value: any): boolean => {

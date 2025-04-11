@@ -18,6 +18,7 @@ import {
   ReturnStmtContext,
   FunctionDeclContext,
   ParamListContext,
+  DerefAssignStmtContext
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./utils/Common";
@@ -129,6 +130,8 @@ export class CrustEvaluatorVisitor
   visitExprStmt(ctx: ExprStmtContext): void {
     // Just compile the contained expression.
     this.visit(ctx.expression());
+    // Pop the result since it's not being used
+    this.instrs[this.wc++] = { tag: "POP" };
   }
 
   /* ************************
@@ -255,6 +258,18 @@ export class CrustEvaluatorVisitor
     }
   }
 
+  visitDerefAssignStmt(ctx: DerefAssignStmtContext): void {
+    // CORRECT ORDER: Reference first, then value
+    // First the right-hand side (value)
+    this.visit(ctx.expression(1));
+    
+    // Then the left-hand side (reference)
+    this.visit(ctx.expression(0));
+    
+    // Now the stack has [reference, value] from top to bottom
+    this.instrs[this.wc++] = { tag: "DEREF_ASSIGN" };
+    this.instrs[this.wc++] = { tag: "POP" };
+  }
   // Visitor for an if statement:
   // 'if' '(' expression ')' statement ('else' statement)?
   visitIfStmt(ctx: IfStmtContext): void {
@@ -317,11 +332,51 @@ export class CrustEvaluatorVisitor
 
   // Visitor for an expression.
   visitExpression(ctx: ExpressionContext): void {
+    
+    // Print children for debugging
+    for (let i = 0; i < ctx.getChildCount(); i++) {
+    }
+    
+    // Special case for &mut (two separate tokens)
+    if (ctx.getChildCount() >= 3 && 
+        ctx.getChild(0).getText() === '&' && 
+        ctx.getChild(1).getText() === 'mut') {
+      const innerExpression = ctx.getChild(2) as ExpressionContext;
+      
+      // If it's an identifier, we need variable info for the reference
+      if (innerExpression.IDENTIFIER()) {
+        const varName = innerExpression.IDENTIFIER().getText();
+        const [frameIndex, valueIndex] = this.compile_time_environment_position(
+          this.global_compile_environment,
+          varName
+        );
+        
+        // Load the variable first
+        this.instrs[this.wc++] = {
+          tag: "LD",
+          pos: [frameIndex, valueIndex],
+        };
+        
+        // Create a reference with variable info
+        this.instrs[this.wc++] = {
+          tag: "UNOP",
+          sym: "&mut",
+          varInfo: { frameIndex, valueIndex }
+        };
+      } else {
+        // For non-identifier expressions
+        this.visit(innerExpression);
+        this.instrs[this.wc++] = { tag: "UNOP", sym: "&mut" };
+      }
+      return;
+    }
+    
+    // Handle method calls (expr.method())
     if (ctx.getChildCount() === 3 && ctx.getChild(1).getText() === ".") {
       // This is a method call expression: expr.method()
       // 1) Compile the base expression
       this.visit(ctx.getChild(0) as ExpressionContext);
-
+      
       // 2) Handle the method call
       const methodCall = ctx.getChild(2);
       if (methodCall.getText().includes("to_string")) {
@@ -330,7 +385,10 @@ export class CrustEvaluatorVisitor
         this.instrs[this.wc++] = { tag: "TOOWNED" };
       }
       return;
-    } else if (ctx.getChildCount() === 1) {
+    }
+    
+    // Handle single-child expressions
+    if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
         this.visit(ctx.getChild(0) as LiteralContext);
       } else if (ctx.IDENTIFIER()) {
@@ -339,8 +397,7 @@ export class CrustEvaluatorVisitor
           this.global_compile_environment,
           sym
         );
-        const varEntry =
-          this.global_compile_environment[frameIndex][valueIndex];
+        const varEntry = this.global_compile_environment[frameIndex][valueIndex];
         this.instrs[this.wc++] = {
           tag: "LD",
           pos: [frameIndex, valueIndex],
@@ -352,22 +409,56 @@ export class CrustEvaluatorVisitor
       } else if (ctx.getChild(0) instanceof LambdaExprContext) {
         this.visit(ctx.getChild(0) as LambdaExprContext);
       } else {
-        throw new Error(`Invalidd expression: ${ctx.getText()}`);
+        throw new Error(`Invalid expression: ${ctx.getText()}`);
       }
-    } else if (ctx.getChildCount() === 2) {
-      // Unary operator: e.g., '-' expression or '!' expression.
+      return;
+    }
+    
+    // Handle unary operators
+    if (ctx.getChildCount() === 2) {
       const op = ctx.getChild(0).getText();
-      this.visit(ctx.getChild(1) as ExpressionContext);
+      const innerExpression = ctx.getChild(1) as ExpressionContext;
+      
+      // Reference and dereference operators
+      if (op === "&" || op === "*") {
+        if (op === "&" && innerExpression.IDENTIFIER()) {
+          // For references to variables, store the variable info
+          const varName = innerExpression.IDENTIFIER().getText();
+          const [frameIndex, valueIndex] = this.compile_time_environment_position(
+            this.global_compile_environment,
+            varName
+          );
+          
+          // Load the variable
+          this.visit(innerExpression);
+          
+          // Create immutable reference with variable info
+          this.instrs[this.wc++] = {
+            tag: "UNOP",
+            sym: op,
+            varInfo: { frameIndex, valueIndex }
+          };
+        } else {
+          // For other expressions or dereference
+          this.visit(innerExpression);
+          this.instrs[this.wc++] = { tag: "UNOP", sym: op };
+        }
+        return;
+      }
+      
+      // Other unary operators (-, !, etc.)
+      this.visit(innerExpression);
       this.instrs[this.wc++] = { tag: "UNOP", sym: op };
-    } else if (ctx.getChildCount() === 3) {
-      if (
-        ctx.getChild(0).getText() === "(" &&
-        ctx.getChild(2).getText() === ")"
-      ) {
-        // Parenthesized expression.
+      return;
+    }
+    
+    // Handle binary operators and parenthesized expressions
+    if (ctx.getChildCount() === 3) {
+      if (ctx.getChild(0).getText() === "(" && ctx.getChild(2).getText() === ")") {
+        // Parenthesized expression
         this.visit(ctx.getChild(1) as ExpressionContext);
       } else {
-        // Binary operator: compile left and right operands.
+        // Binary operator
         this.visit(ctx.getChild(0));
         this.visit(ctx.getChild(2));
         this.instrs[this.wc++] = {
@@ -375,9 +466,10 @@ export class CrustEvaluatorVisitor
           sym: ctx.getChild(1).getText(),
         };
       }
-    } else {
-      throw new Error(`Invaliddd expression: ${ctx.getText()}`);
+      return;
     }
+    
+    throw new Error(`Invalid expression structure: ${ctx.getText()}`);
   }
 
   // Visitor for a literal.
@@ -503,7 +595,6 @@ export class CrustEvaluatorVisitor
       const fmtToken = ctx.STRING().getText();
       const formatStr = fmtToken.substring(1, fmtToken.length - 1);
       const exprs = ctx.expression();
-
       // Compile the format string with expressions
       this.compileTemplate(formatStr, exprs);
     } else {
