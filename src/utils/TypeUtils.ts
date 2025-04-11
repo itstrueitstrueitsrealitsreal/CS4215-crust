@@ -46,25 +46,20 @@ export function parseType(typeAnnotation: string): Type {
     case "()":
       return typeAnnotation;
   }
-  console.log("Parsing type:", typeAnnotation);
   // Handle mutable reference types (e.g., &mut T)
   if (typeAnnotation.startsWith("&mut")) {
-    console.log("Parsing mutable reference type:", typeAnnotation.substring(4).trim());
     const innerType = parseType(typeAnnotation.substring(4).trim());
     return { kind: "mutable_reference", inner: innerType };
   }
 
   if (typeAnnotation.startsWith("&")) {
-    console.log("Parsing reference type:", typeAnnotation.substring(1).trim());
     const innerType = parseType(typeAnnotation.substring(1).trim());
     return { kind: "reference", inner: innerType };
   }
 
   // Handle dereference types (e.g., *T)
   if (typeAnnotation.startsWith("*")) {
-    console.log("Parsing dereference type:", typeAnnotation.substring(1).trim());
     const innerType = parseType(typeAnnotation.substring(1).trim());
-    console.log("Parsed dereference type:", innerType);
     return { kind: "dereference", inner: innerType };
   }
   // Handle function types (if represented in the form "fn(param1, param2) -> returnType")
@@ -97,7 +92,6 @@ export function parseType(typeAnnotation: string): Type {
 
 // Helper function to check if two types are equal
 export function isTypeEqual(type1: Type, type2: Type): boolean {
-  console.log("comparing types:", type1, type2);
   // If both are primitive types, simple comparison
   if (typeof type1 === "string" && typeof type2 === "string") {
     return type1 === type2;

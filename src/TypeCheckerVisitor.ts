@@ -274,7 +274,6 @@ export class TypeCheckerVisitor
     if (ctx.IDENTIFIER()) {
       const sym = ctx.IDENTIFIER().getText();
       const type = this.lookupType(sym);
-      console.log(`Identifier '${sym}' has type: ${typeToString(type)}`);
       return type;
     }
     
@@ -352,7 +351,6 @@ export class TypeCheckerVisitor
     if (op === "&" || op === "&mut") {
       // Get the type of the inner expression
       const innerType = this.visit(innerExpression);
-      console.log(`Creating ${op} reference to:`, JSON.stringify(innerType));
       
       // Create reference type wrapping the full inner type
       return { 

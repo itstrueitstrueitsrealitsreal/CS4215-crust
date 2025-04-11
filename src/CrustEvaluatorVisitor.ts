@@ -259,8 +259,6 @@ export class CrustEvaluatorVisitor
   }
 
   visitDerefAssignStmt(ctx: DerefAssignStmtContext): void {
-    console.log("Visiting DerefAssignStmt: " + ctx.getText());
-    
     // CORRECT ORDER: Reference first, then value
     // First the right-hand side (value)
     this.visit(ctx.expression(1));
@@ -597,18 +595,6 @@ export class CrustEvaluatorVisitor
       const fmtToken = ctx.STRING().getText();
       const formatStr = fmtToken.substring(1, fmtToken.length - 1);
       const exprs = ctx.expression();
-    // Add debugging
-    console.log("PrintlnStmt expressions:", exprs.map(e => e.getText()));
-    console.log("Expression count:", exprs.length);
-    
-    // For each expression, log its structure
-    exprs.forEach((expr, i) => {
-      console.log(`Expression ${i}: ${expr.getText()}`);
-      console.log(`Child count: ${expr.getChildCount()}`);
-      for (let j = 0; j < expr.getChildCount(); j++) {
-        console.log(`  Child ${j}: ${expr.getChild(j).getText()}`);
-      }
-    });
       // Compile the format string with expressions
       this.compileTemplate(formatStr, exprs);
     } else {
