@@ -89,20 +89,20 @@ async function main() {
   //     fact(4);
   // }`;
 
-  const chunk = `{
-        fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
-            if (i > n) {
-                let x : i64 = 5;
-                return acc;
-            } else {
-                return fact_iter(n, i + 1, acc * i);
-            }
-        }
-        fn fact(n: i64) -> i64 {
-            return fact_iter(n, 1, 1);
-        };
-        let x : i64 = fact_iter(4, 1, 1);
-    }`;
+  // const chunk = `{
+  //       fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+  //           if (i > n) {
+  //               let x : i64 = 5;
+  //               return acc;
+  //           } else {
+  //               return fact_iter(n, i + 1, acc * i);
+  //           }
+  //       }
+  //       fn fact(n: i64) -> i64 {
+  //           return fact_iter(n, 1, 1);
+  //       };
+  //       let x : i64 = fact_iter(4, 1, 1);
+  //   }`;
 
   // const chunk = `{
   //   fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
@@ -130,8 +130,8 @@ async function main() {
   // const chunk = `{
   //   let mut x: i64 = 5;
   //   let mut y: i64 = x;
-  //   x = 10;
   //   y;
+  //   x;
   // }`;
 
   // const chunk = `{
@@ -151,10 +151,8 @@ async function main() {
   // ❌ Mutable borrow while immutable borrow is still active
   // const chunk = `{
   //   let mut x: i64 = 5;
-
   //   let r1: &i64 = &x;
   //   let r2: &muti64 = &mut x;
-
   //   println!("r1: {}, r2: {}", r1, r2);
   // }`;
 
@@ -162,7 +160,6 @@ async function main() {
   // const chunk = `{
   //   let a = String::from("hello");
   //   let b = a; // ownership of the String moves to b
-
   //   println!("{}", a);
   //   println!("{}", b);
   // }`;
@@ -171,9 +168,43 @@ async function main() {
   // const chunk = `{
   //   let x = 42;
   //   let r = &x;
-
   //   println!("x: {}, r: {}", x, r);
   // }`;
+
+  // ❌ ERROR: second mutable borrow while `r1` is still active
+  // const chunk = `{
+  //   let mut s = String::from("hello");
+  //   let r1 = &mut s;
+  //   let r2 = &mut s;
+  //   r1 = String::from("bye");
+  //   r2 = String::from("world");
+  //   println!("{}", s);
+  // }`;
+
+  //   const chunk = `{
+  //     let mut s : i64 = 5;
+  //     {
+  //         let mut r1 : &i64 = &mut s;
+  //         r1 = 10;
+  // }{
+  //         let mut r2 : &i64 = &mut s;
+  //         r2 = 20;
+  //     }
+  //     println!("{}", s);
+  //   }`;
+
+  // revert copy [crust]
+  // hs[t] [crust]
+  // types && ** [type checker]
+  // fix borrow checker (move type)
+
+  // ❌ Invalid: Mutable and immutable borrow coexist
+  const chunk = `{
+    let mut x: i64 = 10;
+    let r1: &i64 = &x;
+    let r2: &mut i64 = &mut x;
+    println!("{}", r1);
+  }`;
 
   await evaluator.evaluateChunk(chunk);
 }
