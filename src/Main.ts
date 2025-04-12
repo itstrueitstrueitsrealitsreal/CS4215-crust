@@ -188,37 +188,38 @@ async function main() {
   //   *mut_ref = "modified".to_string();  // Modify through mutable reference
   //   println!("After mutation through reference: {}", *mut_ref);
   // }`;
-  const chunk = `{
-  // Part 1: Basic ownership and mutation
-  let mut original: String = "hello".to_string();
-  println!("Original value: {}", original);
-  
-  // Part 2: Mutable borrowing and dereferencing
-  let mut_ref: &mut String = &mut original;
-  *mut_ref = "modified".to_string();  // Modify through mutable reference
-  println!("After mutation through reference: {}", *mut_ref);
-  
-  // Part 3: Immutable borrowing after mutable borrow is done
-  // Now we can use original again or create new borrows
-  println!("Original value after modification: {}", original);
-  
-  // Part 4: Multiple immutable borrows
-  let ref1: &String = &original;
-  let ref2: &String = &original;
-  println!("Immutable borrows: {}, {}", *ref1, *ref2);
-  
-  // Part 5: Nested references and dereferencing
-  let nested_ref: &&String = &&original;
-  println!("Value through nested reference: {}", **nested_ref);
-  
-  // Part 6: Mixed ownership patterns
-  let mut another: String = "another value".to_string();
-  let another_ref: &String = &another;
-  println!("Another value: {}", *another_ref);
-  
-  // We can still read the original
-  println!("Original: {}, Another: {}", original, another);
-}`;
+
+  //   const chunk = `{
+  //   // Part 1: Basic ownership and mutation
+  //   let mut original: String = "hello".to_string();
+  //   println!("Original value: {}", original);
+
+  //   // Part 2: Mutable borrowing and dereferencing
+  //   let mut_ref: &mut String = &mut original;
+  //   *mut_ref = "modified".to_string();  // Modify through mutable reference
+  //   println!("After mutation through reference: {}", *mut_ref);
+
+  //   // Part 3: Immutable borrowing after mutable borrow is done
+  //   // Now we can use original again or create new borrows
+  //   println!("Original value after modification: {}", original);
+
+  //   // Part 4: Multiple immutable borrows
+  //   let ref1: &String = &original;
+  //   let ref2: &String = &original;
+  //   println!("Immutable borrows: {}, {}", *ref1, *ref2);
+
+  //   // Part 5: Nested references and dereferencing
+  //   let nested_ref: &&String = &&original;
+  //   println!("Value through nested reference: {}", **nested_ref);
+
+  //   // Part 6: Mixed ownership patterns
+  //   let mut another: String = "another value".to_string();
+  //   let another_ref: &String = &another;
+  //   println!("Another value: {}", *another_ref);
+
+  //   // We can still read the original
+  //   println!("Original: {}, Another: {}", original, another);
+  // }`;
 
   // ✅ OK: read-only borrow
   // const chunk = `{
