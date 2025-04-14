@@ -1,6 +1,5 @@
 name: Run Crust Tests
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
