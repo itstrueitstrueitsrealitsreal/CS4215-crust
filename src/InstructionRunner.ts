@@ -554,6 +554,27 @@ const microcode = {
   TOSTRING: (instr) => {
     const val = OS.pop();
     const jsVal = address_to_JS_value(val);
+    
+    // Handle reference types
+    if (typeof jsVal === 'object' && jsVal !== null && 
+        (jsVal.kind === 'reference' || jsVal.kind === 'mutable_reference')) {
+      // Get the actual value through the reference
+      let actualValue;
+      
+      // If we have frame/value indices, use them to get the actual value
+      if (jsVal.frameIndex !== undefined && jsVal.valueIndex !== undefined) {
+        actualValue = address_to_JS_value(heap_get_Environment_value(E, [jsVal.frameIndex, jsVal.valueIndex]));
+      } 
+      // Otherwise, use the inner value directly
+      else if (jsVal.inner !== undefined) {
+        actualValue = jsVal.inner;
+      }
+      
+      push(OS, JS_value_to_address(String(actualValue)));
+      return;
+    }
+    
+    // Regular case for non-references
     const strVal = String(jsVal);
     push(OS, JS_value_to_address(strVal));
   },
