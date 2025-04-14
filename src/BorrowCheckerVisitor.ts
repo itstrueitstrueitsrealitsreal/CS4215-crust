@@ -291,13 +291,17 @@ export class BorrowCheckerVisitor
 
     // if is dereference, read without move
     if (ctx.getChildCount() === 2 && ctx.getChild(0).getText() === "*") {
-      const innerExpression = ctx.getChild(1) as ExpressionContext;
-      const varName = innerExpression.IDENTIFIER()?.getText();
-      if (varName) {
-        this.checker.readFrom(varName); // Perform read without move TODO!
-      } else {
-        this.visit(innerExpression); // Visit the inner expression
-      }
+      // get type
+      // if isCopyType, allow
+      // else disallow bc cannot move out
+
+      // const innerExpression = ctx.getChild(1) as ExpressionContext;
+      // const varName = innerExpression.IDENTIFIER()?.getText();
+      // if (varName) {
+      //   this.checker.readFrom(varName); // Perform read without move TODO!
+      // } else {
+      //   this.visit(innerExpression); // Visit the inner expression
+      // }
       return;
     }
 

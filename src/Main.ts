@@ -329,14 +329,14 @@ async function main() {
   //   println!("Still accessible: {}", a);
   // }`;
 
-  // const chunk = `{
-  //   fn modify(x: &mut i64) {
-  //     *x = *x + 1; // TODO: FIX!!
-  //   }
-  //   let mut a: i64 = 10;
-  //   modify(&mut a);
-  //   modify(&mut a);
-  // }`;
+  const chunk = `{
+    fn modify(x: &mut i64) {
+      *x = *x + 1;
+    }
+    let mut a: i64 = 10;
+    modify(&mut a);
+    modify(&mut a);
+  }`;
 
   // ❌ second mutable borrow while `r1` is still alive
   // const chunk = `{
@@ -450,22 +450,41 @@ async function main() {
   //   }
   // }`;
 
-  const chunk = `{
-    let mut s: String = "start".to_string();
-    let mut count: i64 = 0;
+  // const chunk = `{
+  //   let mut s: String = "start".to_string();
+  //   let mut count: i64 = 0;
 
-    while (count < 3) {
-        {
-            let r: &mut String = &mut s;
-            println!("Modified: {}", r);
-        } 
-        // borrow ends here
+  //   while (count < 3) {
+  //       {
+  //           let r: &mut String = &mut s;
+  //           println!("Modified: {}", r);
+  //       }
+  //       // borrow ends here
 
-        // ✅ now allowed
-        println!("Safe to use s: {}", s);
-        count += 1;
-    }
-  }`;
+  //       // ✅ now allowed
+  //       println!("Safe to use s: {}", s);
+  //       count += 1;
+  //   }
+  // }`;
+
+  // copy deref allowed
+  // const chunk = `{
+  //   let x: i64 = 42;
+  //   let r: &i64 = &x;
+  //   let val: i64 = *r;
+  //   let val1: i64 = *r;
+  //   println!("{}", x);
+  //   println!("{}", val);
+  //   println!("{}", val1);
+  // }`;
+
+  // cannot borrow `r` as mutable, as it is not declared as mutable
+  // const chunk = `{
+  //   let mut x: i64 = 42;
+  //   let r: &mut i64 = &mut x;
+  //   let s: &mut &mut i64 = &mut r;
+  //   *r = 10;
+  // }`;
 
   await evaluator.evaluateChunk(chunk);
 }
