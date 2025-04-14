@@ -103,6 +103,7 @@ async function main() {
   //       };
   //       let x : i64 = fact_iter(4, 1, 1);
   //   }`;
+
   // const chunk = `{
   //       fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
   //           if (i > n) {
@@ -137,13 +138,22 @@ async function main() {
   // }`;
 
   // const chunk = `{
-  //     {let x : String = "hello";};
-  //     let x: i64 = "bye";
+  //     {let x : String = "hello".to_string();};
+  //     let x: String = "bye".to_string();
   // }`;
 
+  // copy type, should work
   // const chunk = `{
   //   let mut x: i64 = 5;
   //   let mut y: i64 = x;
+  //   y;
+  //   x;
+  // }`;
+
+  // not copy type, should fail bc ownership is moved
+  // const chunk = `{
+  //   let mut x: String = "hello".to_string();
+  //   let mut y: String = x;
   //   y;
   //   x;
   // }`;
@@ -155,6 +165,7 @@ async function main() {
   //   y;
   // }`;
 
+  // reassigning to moved value should work
   // const chunk = `{
   //   let mut x: String = "hello".to_string();
   //   let mut y: String = x;
@@ -165,17 +176,25 @@ async function main() {
   // ❌ Mutable borrow while immutable borrow is still active
   // const chunk = `{
   //   let mut x: i64 = 5;
-  //   let r1: &i64 = &x;
-  //   let r2: &muti64 = &mut x;
+  //   let r1: & i64 = &x;
+  //   let r2: &mut i64 = &mut x;
   //   println!("r1: {}, r2: {}", r1, r2);
   // }`;
 
   // ❌ ERROR: a is no longer valid
   // const chunk = `{
-  //   let a = String::from("hello");
-  //   let b = a; // ownership of the String moves to b
+  //     let a : String = "hello".to_string();
+  //     let b : String = a;
+  //     println!("{}", a);
+  //     println!("{}", b);
+  //   }`;
+
+  // double print then move should work
+  // const chunk = `{
+  //   let a : String = "hello".to_string();
   //   println!("{}", a);
-  //   println!("{}", b);
+  //   println!("{}", a);
+  //   let b : String = a;
   // }`;
 
   //   const chunk = `{
@@ -189,7 +208,8 @@ async function main() {
   //   println!("After mutation through reference: {}", *mut_ref);
   // }`;
 
-  //   const chunk = `{
+  // will fail bc lifetime not implemented
+  // const chunk = `{
   //   // Part 1: Basic ownership and mutation
   //   let mut original: String = "hello".to_string();
   //   println!("Original value: {}", original);
@@ -223,44 +243,228 @@ async function main() {
 
   // ✅ OK: read-only borrow
   // const chunk = `{
-  //   let x = 42;
-  //   let r = &x;
-  //   println!("x: {}, r: {}", x, r);
+  //   let x : i64 = 42;
+  //   let r : & i64 = &x;
+  //   let r1 : & i64 = &x;
+  //   println!("x: {}, r: {}, r1: {}", x, r, r1);
   // }`;
 
   // ❌ ERROR: second mutable borrow while `r1` is still active
   // const chunk = `{
-  //   let mut s = String::from("hello");
-  //   let r1 = &mut s;
-  //   let r2 = &mut s;
-  //   r1 = String::from("bye");
-  //   r2 = String::from("world");
+  //   let mut s : String = "hello".to_string();
+  //   let r1 : &mut String = &mut s;
+  //   let r2 : &mut String = &mut s;
+  //   *r1 = "world".to_string();
+  //   *r2 = "world".to_string();
   //   println!("{}", s);
   // }`;
 
-  //   const chunk = `{
+  // const chunk = `{
+  //   let mut s : i64 = 5;
+  //   {
+  //       let mut r1 : &mut i64 = &mut s;
+  //   }{
+  //       let mut g1 : &mut i64 = &mut s;
+  //   }
+  //   println!("{}", s);
+  // }`;
+
+  // const chunk = `{
   //     let mut s : i64 = 5;
+  //     let mut t : i64 = 10;
   //     {
-  //         let mut r1 : &i64 = &mut s;
-  //         r1 = 10;
-  // }{
-  //         let mut r2 : &i64 = &mut s;
-  //         r2 = 20;
+  //         let mut r1 : &mut i64 = &mut s;
+  //         let mut g1 : &mut i64 = &mut t;
+
+  //         g1 = r1;
+  //         r1;
   //     }
   //     println!("{}", s);
   //   }`;
 
-  // revert copy [crust]
-  // hs[t] [crust]
-  // types && ** [type checker]
-  // fix borrow checker (move type)
-
   // ❌ Invalid: Mutable and immutable borrow coexist
+  // const chunk = `{
+  //   let mut x: i64 = 10;
+  //   let r1: &i64 = &x;
+  //   let r2: &mut i64 = &mut x;
+  //   println!("{}", r1);
+  // }`;
+
+  // OK: multiple shared references
+  // const chunk = `{
+  //     let x: i64 = 10;
+  //     let r1: &i64 = &x;
+  //     let r2: &&i64 = &r1;
+  //     println!("r2: {}", **r2);
+  // }`;
+
+  // ❌ `x` is already mutably borrowed by `r1`
+  // const chunk = `{
+  //   let mut x: i64 = 42;
+  //   let r1: &mut i64 = &mut x;
+  //   let r2: &&&mut i64 = &&&mut x;
+  //   println!("{}", r1);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 5;
+
+  //   {
+  //       let r1: &mut i64 = &mut x;
+  //       *r1 = *r1 + 1;
+  //   }
+
+  //   let r2: &&mut i64 = &&mut x;
+  //   **r2 = **r2 + 2;
+
+  //   println!("{}", x); // prints 8
+  // }`;
+
+  // const chunk = `{
+  //   fn print_value(x: &i64) {
+  //     println!("Value: {}", x);
+  //   }
+  //   let a: i64 = 10;
+  //   print_value(&a);
+  //   println!("Still accessible: {}", a);
+  // }`;
+
+  // const chunk = `{
+  //   fn modify(x: &mut i64) {
+  //     *x = *x + 1; // TODO: FIX!!
+  //   }
+  //   let mut a: i64 = 10;
+  //   modify(&mut a);
+  //   modify(&mut a);
+  // }`;
+
+  // ❌ second mutable borrow while `r1` is still alive
+  // const chunk = `{
+  //   fn double_mut(x: &mut i64) {
+  //     let r1: &mut i64 = x;
+  //     let r2: &mut i64 = x;
+
+  //     *r1 = *r1 + 1;
+  //     *r2 = *r2 + 2;
+  //   }
+  //   let mut num: i64 = 10;
+  //   double_mut(&mut num);
+  // }`;
+
+  // ❌ Error: use after move
+  // const chunk = `{
+  //   fn take(x: String) {
+  //     println!("{}", x);
+  //   }
+  //   let a: String = "hello".to_string();
+  //   take(a);
+  //   println!("{}", a);
+  // }`;
+
+  // const chunk = `{
+  //   let mut value: i64 = 10;
+  //   let mut r1: &mut i64 = &mut value;
+  //   let r2: &mut &mut i64 = &mut r1;
+
+  //   **r2 = **r2 + 5;
+
+  //   println!("{}", value); // 15
+  // }`;
+
+  // reassigning borrow to same variable should work
+  // const chunk = `{
+  //     let mut x: i64 = 10;
+  //     let mut y: i64 = 10;
+  //     let mut r: &mut i64 = &mut x;
+  //     r = &mut x;
+  //     println!("{}", x);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 10;
+  //   let mut r: &mut i64 = &mut x;
+  //   let mut r1: &mut i64 = r;
+  //   println!("{}", r);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 0;
+  //   let r: &mut i64 = &mut x;
+  //   while (*r < 5) {
+  //       *r = 1;
+  //   }
+  //   println!("{}", x);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 0;
+
+  //   while (x < 5) {
+  //       {
+  //           let r: &mut i64 = &mut x;
+  //           *r = 6;
+  //           println!("r = {}", r);
+  //       }
+
+  //       println!("x = {}", x);
+  //   }
+  // }`;
+
+  // const chunk = `{
+  //     let mut s: String = "hello".to_string();
+
+  //     if (true) {
+  //         let r: &mut String = &mut s;
+  //         println!("{}", r);
+  //     }
+
+  //     println!("{}", s);
+  // }`;
+
+  // const chunk = `{
+  //   let s: String = "hello".to_string();
+
+  //   if (false) {
+  //       let r: &mut String = &mut s;
+  //       println!("{}", s);
+  //   }
+
+  //   println!("{}", s);
+  // }`;
+
+  // ❌ Error: cannot use `s` because it is mutably borrowed
+  // const chunk = `{
+  //   let mut s: String = "start".to_string();
+  //   let mut t: String = "bye".to_string();
+  //   let mut count: i64 = 0;
+
+  //   // declare the mutable reference outside the loop
+  //   let mut r: &mut String = &mut t;
+
+  //   while (count < 3) {
+  //       // create a mutable borrow
+  //       r = &mut s;
+  //       // try to use s again while it's still borrowed
+  //       println!("Value of s: {}", s);
+  //       count += 1;
+  //   }
+  // }`;
+
   const chunk = `{
-    let mut x: i64 = 10;
-    let r1: &i64 = &x;
-    let r2: &mut i64 = &mut x;
-    println!("{}", r1);
+    let mut s: String = "start".to_string();
+    let mut count: i64 = 0;
+
+    while (count < 3) {
+        {
+            let r: &mut String = &mut s;
+            println!("Modified: {}", r);
+        } 
+        // borrow ends here
+
+        // ✅ now allowed
+        println!("Safe to use s: {}", s);
+        count += 1;
+    }
   }`;
 
   await evaluator.evaluateChunk(chunk);

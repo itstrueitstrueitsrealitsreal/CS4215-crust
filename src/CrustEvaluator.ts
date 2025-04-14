@@ -37,8 +37,8 @@ export class CrustEvaluator extends BasicEvaluator {
       let type = this.typeCheckerVisitor.visit(tree);
       console.log("Type checking done:", type);
 
-      // this.borrowCheckerVisitor.visit(tree);
-      // console.log("Borrow checking done");
+      this.borrowCheckerVisitor.visit(tree);
+      console.log("Borrow checking done");
 
       this.evaluatorVisitor.visit(tree);
       const instrs = this.evaluatorVisitor.getInstrs();
