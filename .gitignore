@@ -18,3 +18,5 @@ src/parser/
 #!.yarn/cache
 .pnp.*
 .idea/
+
+test-results.txt
