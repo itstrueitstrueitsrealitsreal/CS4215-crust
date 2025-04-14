@@ -18,7 +18,7 @@ import {
   ReturnStmtContext,
   FunctionDeclContext,
   ParamListContext,
-  DerefAssignStmtContext
+  DerefAssignStmtContext,
 } from "./parser/src/CrustParser";
 import { CrustVisitor } from "./parser/src/CrustVisitor";
 import { push } from "./utils/Common";
@@ -262,10 +262,10 @@ export class CrustEvaluatorVisitor
     // CORRECT ORDER: Reference first, then value
     // First the right-hand side (value)
     this.visit(ctx.expression(1));
-    
+
     // Then the left-hand side (reference)
     this.visit(ctx.expression(0));
-    
+
     // Now the stack has [reference, value] from top to bottom
     this.instrs[this.wc++] = { tag: "DEREF_ASSIGN" };
     this.instrs[this.wc++] = { tag: "POP" };
@@ -332,17 +332,17 @@ export class CrustEvaluatorVisitor
 
   // Visitor for an expression.
   visitExpression(ctx: ExpressionContext): void {
-    
     // Print children for debugging
-    for (let i = 0; i < ctx.getChildCount(); i++) {
-    }
-    
+    for (let i = 0; i < ctx.getChildCount(); i++) {}
+
     // Special case for &mut (two separate tokens)
-    if (ctx.getChildCount() >= 3 && 
-        ctx.getChild(0).getText() === '&' && 
-        ctx.getChild(1).getText() === 'mut') {
+    if (
+      ctx.getChildCount() >= 3 &&
+      ctx.getChild(0).getText() === "&" &&
+      ctx.getChild(1).getText() === "mut"
+    ) {
       const innerExpression = ctx.getChild(2) as ExpressionContext;
-      
+
       // If it's an identifier, we need variable info for the reference
       if (innerExpression.IDENTIFIER()) {
         const varName = innerExpression.IDENTIFIER().getText();
@@ -350,18 +350,18 @@ export class CrustEvaluatorVisitor
           this.global_compile_environment,
           varName
         );
-        
+
         // Load the variable first
         this.instrs[this.wc++] = {
           tag: "LD",
           pos: [frameIndex, valueIndex],
         };
-        
+
         // Create a reference with variable info
         this.instrs[this.wc++] = {
           tag: "UNOP",
           sym: "&mut",
-          varInfo: { frameIndex, valueIndex }
+          varInfo: { frameIndex, valueIndex },
         };
       } else {
         // For non-identifier expressions
@@ -370,13 +370,13 @@ export class CrustEvaluatorVisitor
       }
       return;
     }
-    
+
     // Handle method calls (expr.method())
     if (ctx.getChildCount() === 3 && ctx.getChild(1).getText() === ".") {
       // This is a method call expression: expr.method()
       // 1) Compile the base expression
       this.visit(ctx.getChild(0) as ExpressionContext);
-      
+
       // 2) Handle the method call
       const methodCall = ctx.getChild(2);
       if (methodCall.getText().includes("to_string")) {
@@ -386,7 +386,7 @@ export class CrustEvaluatorVisitor
       }
       return;
     }
-    
+
     // Handle single-child expressions
     if (ctx.getChildCount() === 1) {
       if (ctx.getChild(0) instanceof LiteralContext) {
@@ -397,7 +397,8 @@ export class CrustEvaluatorVisitor
           this.global_compile_environment,
           sym
         );
-        const varEntry = this.global_compile_environment[frameIndex][valueIndex];
+        const varEntry =
+          this.global_compile_environment[frameIndex][valueIndex];
         this.instrs[this.wc++] = {
           tag: "LD",
           pos: [frameIndex, valueIndex],
@@ -413,30 +414,31 @@ export class CrustEvaluatorVisitor
       }
       return;
     }
-    
+
     // Handle unary operators
     if (ctx.getChildCount() === 2) {
       const op = ctx.getChild(0).getText();
       const innerExpression = ctx.getChild(1) as ExpressionContext;
-      
+
       // Reference and dereference operators
       if (op === "&" || op === "*") {
         if (op === "&" && innerExpression.IDENTIFIER()) {
           // For references to variables, store the variable info
           const varName = innerExpression.IDENTIFIER().getText();
-          const [frameIndex, valueIndex] = this.compile_time_environment_position(
-            this.global_compile_environment,
-            varName
-          );
-          
+          const [frameIndex, valueIndex] =
+            this.compile_time_environment_position(
+              this.global_compile_environment,
+              varName
+            );
+
           // Load the variable
           this.visit(innerExpression);
-          
+
           // Create immutable reference with variable info
           this.instrs[this.wc++] = {
             tag: "UNOP",
             sym: op,
-            varInfo: { frameIndex, valueIndex }
+            varInfo: { frameIndex, valueIndex },
           };
         } else {
           // For other expressions or dereference
@@ -445,16 +447,19 @@ export class CrustEvaluatorVisitor
         }
         return;
       }
-      
+
       // Other unary operators (-, !, etc.)
       this.visit(innerExpression);
       this.instrs[this.wc++] = { tag: "UNOP", sym: op };
       return;
     }
-    
+
     // Handle binary operators and parenthesized expressions
     if (ctx.getChildCount() === 3) {
-      if (ctx.getChild(0).getText() === "(" && ctx.getChild(2).getText() === ")") {
+      if (
+        ctx.getChild(0).getText() === "(" &&
+        ctx.getChild(2).getText() === ")"
+      ) {
         // Parenthesized expression
         this.visit(ctx.getChild(1) as ExpressionContext);
       } else {
@@ -468,7 +473,7 @@ export class CrustEvaluatorVisitor
       }
       return;
     }
-    
+
     throw new Error(`Invalid expression structure: ${ctx.getText()}`);
   }
 
@@ -743,11 +748,5 @@ export class CrustEvaluatorVisitor
   // Public method to obtain generated instructions.
   public getInstrs(): any[] {
     return this.instrs;
-  }
-  private isMoveType(t: Type): boolean {
-    if (typeof t === "string") {
-      return t === "String";
-    }
-    return false;
   }
 }
