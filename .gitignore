@@ -1,8 +1,5 @@
 node_modules/
 dist/
-# Ignore ANTLR temporary/generated directories
-.antlr/
-src/parser/
 
 .yarn/*
 !.yarn/patches
