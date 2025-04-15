@@ -74,24 +74,6 @@ export const testCases: TestCase[] = [
     }`,
     expectedOutput: ["Innermost x: 30", "Middle x: 20", "Outer x: 10"]
   },
-  
-  // Function with early return
-  // {
-  //   name: "Function with early return",
-  //   code: `{
-  //     fn is_positive(x: i64) -> bool {
-  //       if (x <= 0) {
-  //         return false;
-  //       }
-  //       return true;
-  //     }
-      
-  //     println!("Is 5 positive? {}", is_positive(5));
-  //     println!("Is -3 positive? {}", is_positive(-3));
-  //   }`,
-  //   expectedOutput: ["Is 5 positive? true", "Is -3 positive? false"]
-  // },
-  
   // Functions with multiple parameters
   {
     name: "Functions with multiple parameters",

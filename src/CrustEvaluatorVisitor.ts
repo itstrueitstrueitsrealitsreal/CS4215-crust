@@ -34,33 +34,12 @@ export class CrustEvaluatorVisitor
 
   private compileSequence(statements: any[]): void {
     for (let i = 0; i < statements.length - 1; i++) {
-      const stmt = statements[i];
-      this.visit(stmt);
-  
-      // Add this log to check the statement type
-      console.log(`compileSequence: Checking statement type for POP: ${stmt.constructor.name}`);
-  
-      // Only POP if the statement is guaranteed *not* to alter control flow...
-      if (
-        !(stmt instanceof IfStmtContext) &&
-        !(stmt instanceof WhileStmtContext) &&
-        !(stmt instanceof BlockStmtContext) &&
-        !(stmt instanceof ReturnStmtContext) &&
-        !(stmt instanceof BreakStmtContext) &&
-        !(stmt instanceof FunctionDeclContext)
-      ) {
-         console.log(`compileSequence: Adding POP after ${stmt.constructor.name}`); // Add this log
-         this.instrs[this.wc++] = { tag: "POP" };
-      } else {
-         console.log(`compileSequence: Skipping POP after ${stmt.constructor.name}`); // Add this log
-      }
+      this.visit(statements[i]);
+      // Discard the result of non-final statements.
+      this.instrs[this.wc++] = { tag: "POP" };
     }
-    // Visit the last statement (or push undefined for empty sequence)
     if (statements.length > 0) {
       this.visit(statements[statements.length - 1]);
-    } else {
-      // Empty sequence should produce undefined
-      this.instrs[this.wc++] = { tag: "LDC", val: undefined };
     }
   }
 
