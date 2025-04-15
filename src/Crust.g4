@@ -1,88 +1,115 @@
 grammar Crust;
 
-// The entry point for a Crust program
-program: statement* EOF;
+// A program is one or more statements ending with EOF.
+prog: (statement)+ EOF;
 
-// Statements: variable declarations, function declarations, blocks, if/else, while loops, return
-// statements, and expression statements.
 statement:
-	variableDeclaration
-	| functionDeclaration
-	| block
-	| ifStatement
-	| whileStatement
-	| returnStatement
-	| expressionStatement;
+	exprStmt
+	| varDecl
+	| derefAssignStmt
+	| assignmentStmt
+	| ifStmt
+	| whileStmt
+	| breakStmt
+	| printStmt
+	| printlnStmt
+	| blockStmt
+	| returnStmt
+	| functionDecl;
 
-// Variable declaration supports an optional 'mut' for mutability and an optional initializer.
-variableDeclaration:
-	'let' ('mut')? Identifier ('=' expression)? ';';
+exprStmt: expression ';';
+varDecl:
+	'let' ('mut')? IDENTIFIER ':' typeAnnotation ('=' expression)? ';';
+// Assignment statement supports both plain assignment and compound assignment.
+assignmentStmt: IDENTIFIER assignOp expression ';';
+derefAssignStmt: '*' expression '=' expression ';';
 
-// Function declaration with a parameter list (parameters may have types) and a block body.
-functionDeclaration:
-	'fn' Identifier '(' parameterList? ')' block;
+assignOp:
+	'='
+	| '+='
+	| '-='
+	| '*='
+	| '/='
+	| '%='
+	| '<<='
+	| '>>='
+	| '&='
+	| '^='
+	| '|=';
 
-// A comma-separated list of parameters.
-parameterList: parameter (',' parameter)*;
-
-// Each parameter is an identifier, optionally annotated with a type.
-parameter: Identifier (':' type)?;
-
+breakStmt: 'break' ';';
+ifStmt: 'if' '(' expression ')' statement ('else' statement)?;
+whileStmt: 'while' '(' expression ')' statement;
 // A block is a sequence of statements enclosed in braces.
-block: '{' statement* '}';
+blockStmt: '{' statement* '}'; // have not implemented scope yet
 
-// An if statement with an optional else branch.
-ifStatement: 'if' '(' expression ')' block ('else' block)?;
+// Macros: print!: prints without a newline.
+printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
+// println!: prints with a newline. Also allows no arguments.
+printlnStmt:
+	'println!' '(' STRING (',' expression)* ')' ';'
+	| 'println!' '(' ')' ';';
+// format!: formats a string with arguments.
+formatExpr: 'format!' '(' STRING (',' expression)* ')';
 
-// A while loop with a condition and block body.
-whileStatement: 'while' '(' expression ')' block;
+returnStmt: 'return' expression? ';';
+functionDecl:
+	'fn' IDENTIFIER '(' paramList? ')' ('->' typeAnnotation)? blockStmt;
 
-// A return statement may optionally return an expression.
-returnStatement: 'return' expression? ';';
+expression:
+    formatExpr
+    | literal
+    | IDENTIFIER
+    | '(' expression ')'
+    | '-' expression                         // unary minus
+    | '!' expression                         // logical not
+    | '*' expression                         // Dereference
+    | '&' 'mut' expression                   // Mutable reference (separate rules)
+    | '&' expression                         // Immutable reference
+    | expression op = ('*' | '/' | '%') expression     // multiplicative
+    | expression op = ('+' | '-') expression           // additive
+    | expression op = ('<<' | '>>') expression         // bit-shift
+    | expression op = ('<' | '<=' | '>' | '>=') expression  // relational
+    | expression op = ('==' | '!=') expression         // equality
+    | expression op = '&' expression                   // bitwise AND (single &)
+    | expression op = '^' expression                   // bitwise XOR
+    | expression op = '|' expression                   // bitwise OR
+    | expression '&' '&' expression              // Use '&' '&' instead of '&&'
+    | expression '|' '|' expression              // Use '|' '|' instead of '||'
+    | lambdaExpr
+    | lambdaCall
+    | expression '.' methodCall;
 
-// An expression statement ends with a semicolon.
-expressionStatement: expression ';';
+methodCall: 'to_string' '(' ')' | 'to_owned' '(' ')';
+lambdaExpr:
+	'|' paramList? '|' ('->' typeAnnotation)? (
+		expression
+		| blockStmt
+	);
+lambdaCall: IDENTIFIER '(' argList? ')';
+paramList:
+	IDENTIFIER (':' typeAnnotation)? (
+		',' IDENTIFIER (':' typeAnnotation)?
+	)*;
+argList: expression (',' expression)*;
 
-// --- Expressions --- The grammar below implements a simple expression language with assignment,
-// logical operators, equality and relational operators, arithmetic, and unary operations.
-// (Borrowing using '&' is handled as a unary operator.)
+typeAnnotation:
+	'bool'
+	| 'char'
+	| '&str' // implements copy
+	| 'String' // implements move
+	| 'i64'
+	| '()'
+	| '&' typeAnnotation // Immutable reference
+    | '&' 'mut' typeAnnotation; // Mutable reference
 
-expression: assignment;
+literal: INT | BOOL | CHAR | STRING;
+INT: [0-9]+;
+BOOL: 'true' | 'false';
+CHAR: '\'' . '\'';
+IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+STRING: '"' ( ~["\\] | '\\' .)* '"';
 
-// Assignment: right-associative.
-assignment: logicalOr ( '=' assignment)?;
-
-// Logical OR.
-logicalOr: logicalAnd ( '||' logicalAnd)*;
-
-// Logical AND.
-logicalAnd: equality ( '&&' equality)*;
-
-// Equality operators.
-equality: relational ( ( '==' | '!=') relational)*;
-
-// Relational operators.
-relational: additive ( ( '<' | '>' | '<=' | '>=') additive)*;
-
-// Additive: addition and subtraction.
-additive: multiplicative ( ( '+' | '-') multiplicative)*;
-
-// Multiplicative: multiplication, division, and modulo.
-multiplicative: unary ( ( '*' | '/' | '%') unary)*;
-
-// Unary operations: negation, logical NOT, and address-of (borrow).
-unary: ( '!' | '-' | '&')? primary;
-
-// Primary expressions: integer literals, identifiers, or parenthesized expressions.
-primary: Integer | Identifier | '(' expression ')';
-
-// A simple type is just an identifier.
-type: Identifier;
-
-// --- Lexer rules ---
-
-Identifier: [a-zA-Z_][a-zA-Z_0-9]*;
-Integer: [0-9]+;
-
-// Skip whitespace.
 WS: [ \t\r\n]+ -> skip;
+COMMENT: '//' ~[\r\n]* -> skip;
+BLOCK_COMMENT: '/*' .*? '*/' -> skip;
