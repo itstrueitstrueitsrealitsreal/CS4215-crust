@@ -24,7 +24,7 @@ export class CrustEvaluator extends BasicEvaluator {
 
   async evaluateChunk(chunk: string): Promise<void> {
     try {
-      console.log(`Evaluating chunk: ${chunk}`);
+      this.conductor.sendOutput(`Evaluating chunk: ${chunk}`);
       const inputStream = CharStream.fromString(chunk);
       const lexer = new CrustLexer(inputStream);
       const tokenStream = new CommonTokenStream(lexer);

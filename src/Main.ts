@@ -11,10 +11,6 @@ export class TestConductor implements IRunnerPlugin { // Make sure it's exported
   private originalConsoleLog = console.log;
   private originalConsoleError = console.error;
 
-  constructor() {
-    // No longer override global console methods here
-  }
-
   sendOutput(output: string): void {
     this.outputs.push(output);
     // Optionally log to console during tests for visibility
@@ -44,9 +40,6 @@ export class TestConductor implements IRunnerPlugin { // Make sure it's exported
   importAndRegisterExternalPlugin() { return Promise.resolve({} as any); }
   importAndRegisterExternalModule() { return Promise.resolve({} as any); }
   name?: string;
-  destroy() {
-    // No need to restore console methods anymore
-  }
 }
 
 // Main function to run all tests
