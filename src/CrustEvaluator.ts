@@ -46,7 +46,7 @@ export class CrustEvaluator extends BasicEvaluator {
 
       console.log("PRINTING INSTRS:");
       console.log(instrs);
-      const result = run(instrs);
+      const result = run(instrs, this.conductor);
 
       // const result = this.visitor.visit(tree);
       console.log(`Result: ${result}`);

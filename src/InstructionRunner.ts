@@ -1,12 +1,228 @@
 import { push } from "./utils/Common";
 import { binop_microcode, unop_microcode } from "./utils/OpMicrocodeUtil";
+import {IRunnerPlugin} from "conductor/dist/conductor/runner/types";
 
-export function run(instrs: any[]): any {
+export function run(instrs: any[], conductor: IRunnerPlugin): any {
   OS = [];
   PC = 0;
   E = global_environment;
   RTS = [];
   stringPool = {}; // Reset string pool for this run
+  const microcode = {
+    LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
+    UNOP: (instr) => {
+      const value = OS.pop();
+      
+      // For reference operators (&mut or &)
+      if (instr.sym === "&" || instr.sym === "&mut") {
+        if (instr.varInfo) {
+          // Create a reference object
+          const refObj = {
+            kind: instr.sym === "&mut" ? "mutable_reference" : "reference",
+            inner: address_to_JS_value(value), // Keep the full value structure
+            frameIndex: instr.varInfo.frameIndex,
+            valueIndex: instr.varInfo.valueIndex
+          };
+          
+          // Store the reference
+          push(OS, JS_value_to_address(refObj));
+          return;
+        }
+      }
+      
+      // For dereference operator (*)
+      if (instr.sym === "*") {
+        const jsValue = address_to_JS_value(value);
+        
+        if (typeof jsValue === "object" && jsValue !== null &&
+            (jsValue.kind === "reference" || jsValue.kind === "mutable_reference")) {
+          
+          // For nested references
+          if (typeof jsValue.inner === "object" && jsValue.inner !== null && 
+              (jsValue.inner.kind === "reference" || jsValue.inner.kind === "mutable_reference")) {
+            // Return the inner reference structure to be dereferenced again
+            push(OS, JS_value_to_address(jsValue.inner));
+            return;
+          }
+          
+          // For simple references to values
+          if (jsValue.frameIndex !== undefined && jsValue.valueIndex !== undefined) {
+            const actualValue = heap_get_Environment_value(E, [jsValue.frameIndex, jsValue.valueIndex]);
+            push(OS, actualValue);
+            return;
+          }
+          
+          // If we get here, we have a reference but no frame info - try using the inner value directly
+          if (jsValue.inner !== undefined) {
+            console.log("Using inner value directly:", jsValue.inner);
+            push(OS, JS_value_to_address(jsValue.inner));
+            return;
+          }
+        }
+        
+        console.warn("Not a proper reference for dereferencing:", jsValue);
+        throw new Error(`Cannot dereference non-reference type: ${jsValue}`);
+      }
+      
+      // Normal case for other operators
+      push(OS, apply_unop(instr.sym, value));
+    },
+    BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
+    POP: (instr) => OS.pop(),
+    JOF: (instr) => {
+      const condition = OS.pop();
+      if (!address_to_JS_value(condition)) {
+        PC = instr.addr;
+      }
+    },
+    GOTO: (instr) => {
+      PC = instr.addr;
+    },
+    ENTER_SCOPE: (instr) => {
+      // Push a new block frame and extend the environment with a new frame
+      push(RTS, heap_allocate_Blockframe(E));
+      const frame_address = heap_allocate_Frame(instr.num);
+      E = heap_Environment_extend(frame_address, E);
+      for (let i = 0; i < instr.num; i++) {
+        heap_set_child(frame_address, i, Unassigned);
+      }
+    },
+    EXIT_SCOPE: (instr) => {
+      // Restore environment from the block frame
+      E = heap_get_Blockframe_environment(RTS.pop());
+    },
+    LD: (instr) => {
+      const val = heap_get_Environment_value(E, instr.pos);
+      if (is_Unassigned(val)) throw new Error("access of unassigned variable");
+      push(OS, val);
+    },
+    ASSIGN: (instr) => {
+      heap_set_Environment_value(E, instr.pos, peek(OS, 0));
+    },
+    LDF: (instr) => {
+      const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
+      push(OS, closure_address);
+    },
+    // CALL and TAIL_CALL should be implemented following the same conventions.
+    CALL: (instr) => {
+      const arity = instr.arity;
+      const fun = peek(OS, arity);
+      //   if (is_Builtin(fun)) {
+      //     return apply_builtin(heap_get_Builtin_id(fun));
+      //   }
+      const frame_address = heap_allocate_Frame(arity);
+      for (let i = arity - 1; i >= 0; i--) {
+        heap_set_child(frame_address, i, OS.pop());
+      }
+      OS.pop(); // pop the function
+      push(RTS, heap_allocate_Callframe(E, PC));
+      E = heap_Environment_extend(
+        frame_address,
+        heap_get_Closure_environment(fun)
+      );
+      PC = heap_get_Closure_pc(fun);
+    },
+    TAIL_CALL: (instr) => {
+      const arity = instr.arity;
+      const fun = peek(OS, arity);
+      //   if (is_Builtin(fun)) {
+      //     return apply_builtin(heap_get_Builtin_id(fun));
+      //   }
+      const frame_address = heap_allocate_Frame(arity);
+      for (let i = arity - 1; i >= 0; i--) {
+        heap_set_child(frame_address, i, OS.pop());
+      }
+      OS.pop(); // pop fun
+      // No push to RTS for tail calls
+      E = heap_Environment_extend(
+        frame_address,
+        heap_get_Closure_environment(fun)
+      );
+      PC = heap_get_Closure_pc(fun);
+    },
+    RESET: (instr) => {
+      PC--;
+      const top_frame = RTS.pop();
+      if (is_Callframe(top_frame)) {
+        PC = heap_get_Callframe_pc(top_frame);
+        E = heap_get_Callframe_environment(top_frame);
+      }
+    },
+    PRINT: (instr) => {
+      const val = OS.pop();
+      const jsVal = address_to_JS_value(val);
+      // Optionally, check that jsVal is a string.
+      if (typeof jsVal !== "string") {
+        throw new Error("print! expects a string");
+      }
+      // Print without a newline:
+      conductor.sendOutput(jsVal);
+    },
+    PRINTLN: (instr) => {
+      const val = OS.pop();
+      const jsVal = address_to_JS_value(val);
+      if (typeof jsVal !== "string") {
+        throw new Error("println! expects a string");
+      }
+      conductor.sendOutput(jsVal);
+    },
+    TOSTRING: (instr) => {
+      const val = OS.pop();
+      const jsVal = address_to_JS_value(val);
+      
+      // Handle reference types
+      if (typeof jsVal === 'object' && jsVal !== null && 
+          (jsVal.kind === 'reference' || jsVal.kind === 'mutable_reference')) {
+        // Get the actual value through the reference
+        let actualValue;
+        
+        // If we have frame/value indices, use them to get the actual value
+        if (jsVal.frameIndex !== undefined && jsVal.valueIndex !== undefined) {
+          actualValue = address_to_JS_value(heap_get_Environment_value(E, [jsVal.frameIndex, jsVal.valueIndex]));
+        } 
+        // Otherwise, use the inner value directly
+        else if (jsVal.inner !== undefined) {
+          actualValue = jsVal.inner;
+        }
+        
+        push(OS, JS_value_to_address(String(actualValue)));
+        return;
+      }
+      
+      // Regular case for non-references
+      const strVal = String(jsVal);
+      push(OS, JS_value_to_address(strVal));
+    },
+    TOOWNED: (instr) => {
+      const val = OS.pop();
+      const jsVal = address_to_JS_value(val);
+      const strVal = String(jsVal);
+      push(OS, JS_value_to_address(strVal));
+    },
+    DEREF_ASSIGN: (instr) => {
+      const refValue = OS.pop();  // The reference
+      const newValue = OS.pop();  // The new value (FIX: pop it, don't just peek)
+      
+      // Convert reference to JS object
+      const jsRef = address_to_JS_value(refValue);
+      
+      if (typeof jsRef !== "object" || jsRef === null || 
+          (jsRef.kind !== "reference" && jsRef.kind !== "mutable_reference")) {
+        throw new Error("Can only assign through mutable references");
+      }
+      
+      if (jsRef.kind !== "mutable_reference") {
+        throw new Error("Cannot assign through immutable reference");
+      }
+      
+      // Update the original variable through the reference
+      if (jsRef.frameIndex !== undefined && jsRef.valueIndex !== undefined) {
+        heap_set_Environment_value(E, [jsRef.frameIndex, jsRef.valueIndex], newValue);
+      } else {
+        throw new Error("Reference doesn't contain valid location information");
+      }
+    }
+  }; 
 
   while (!(instrs[PC].tag === "DONE")) {
     const instr = instrs[PC++];
@@ -392,222 +608,6 @@ let PC; // JS number
 let E; // heap Address
 let RTS; // JS array (stack) of Addresses
 HEAP; // (declared above already)
-
-const microcode = {
-  LDC: (instr) => push(OS, JS_value_to_address(instr.val)),
-  UNOP: (instr) => {
-    const value = OS.pop();
-    
-    // For reference operators (&mut or &)
-    if (instr.sym === "&" || instr.sym === "&mut") {
-      if (instr.varInfo) {
-        // Create a reference object
-        const refObj = {
-          kind: instr.sym === "&mut" ? "mutable_reference" : "reference",
-          inner: address_to_JS_value(value), // Keep the full value structure
-          frameIndex: instr.varInfo.frameIndex,
-          valueIndex: instr.varInfo.valueIndex
-        };
-        
-        // Store the reference
-        push(OS, JS_value_to_address(refObj));
-        return;
-      }
-    }
-    
-    // For dereference operator (*)
-    if (instr.sym === "*") {
-      const jsValue = address_to_JS_value(value);
-      
-      if (typeof jsValue === "object" && jsValue !== null &&
-          (jsValue.kind === "reference" || jsValue.kind === "mutable_reference")) {
-        
-        // For nested references
-        if (typeof jsValue.inner === "object" && jsValue.inner !== null && 
-            (jsValue.inner.kind === "reference" || jsValue.inner.kind === "mutable_reference")) {
-          // Return the inner reference structure to be dereferenced again
-          push(OS, JS_value_to_address(jsValue.inner));
-          return;
-        }
-        
-        // For simple references to values
-        if (jsValue.frameIndex !== undefined && jsValue.valueIndex !== undefined) {
-          const actualValue = heap_get_Environment_value(E, [jsValue.frameIndex, jsValue.valueIndex]);
-          push(OS, actualValue);
-          return;
-        }
-        
-        // If we get here, we have a reference but no frame info - try using the inner value directly
-        if (jsValue.inner !== undefined) {
-          console.log("Using inner value directly:", jsValue.inner);
-          push(OS, JS_value_to_address(jsValue.inner));
-          return;
-        }
-      }
-      
-      console.warn("Not a proper reference for dereferencing:", jsValue);
-      throw new Error(`Cannot dereference non-reference type: ${jsValue}`);
-    }
-    
-    // Normal case for other operators
-    push(OS, apply_unop(instr.sym, value));
-  },
-  BINOP: (instr) => push(OS, apply_binop(instr.sym, OS.pop(), OS.pop())),
-  POP: (instr) => OS.pop(),
-  JOF: (instr) => {
-    const condition = OS.pop();
-    if (!address_to_JS_value(condition)) {
-      PC = instr.addr;
-    }
-  },
-  GOTO: (instr) => {
-    PC = instr.addr;
-  },
-  ENTER_SCOPE: (instr) => {
-    // Push a new block frame and extend the environment with a new frame
-    push(RTS, heap_allocate_Blockframe(E));
-    const frame_address = heap_allocate_Frame(instr.num);
-    E = heap_Environment_extend(frame_address, E);
-    for (let i = 0; i < instr.num; i++) {
-      heap_set_child(frame_address, i, Unassigned);
-    }
-  },
-  EXIT_SCOPE: (instr) => {
-    // Restore environment from the block frame
-    E = heap_get_Blockframe_environment(RTS.pop());
-  },
-  LD: (instr) => {
-    const val = heap_get_Environment_value(E, instr.pos);
-    if (is_Unassigned(val)) throw new Error("access of unassigned variable");
-    push(OS, val);
-  },
-  ASSIGN: (instr) => {
-    heap_set_Environment_value(E, instr.pos, peek(OS, 0));
-  },
-  LDF: (instr) => {
-    const closure_address = heap_allocate_Closure(instr.arity, instr.addr, E);
-    push(OS, closure_address);
-  },
-  // CALL and TAIL_CALL should be implemented following the same conventions.
-  CALL: (instr) => {
-    const arity = instr.arity;
-    const fun = peek(OS, arity);
-    //   if (is_Builtin(fun)) {
-    //     return apply_builtin(heap_get_Builtin_id(fun));
-    //   }
-    const frame_address = heap_allocate_Frame(arity);
-    for (let i = arity - 1; i >= 0; i--) {
-      heap_set_child(frame_address, i, OS.pop());
-    }
-    OS.pop(); // pop the function
-    push(RTS, heap_allocate_Callframe(E, PC));
-    E = heap_Environment_extend(
-      frame_address,
-      heap_get_Closure_environment(fun)
-    );
-    PC = heap_get_Closure_pc(fun);
-  },
-  TAIL_CALL: (instr) => {
-    const arity = instr.arity;
-    const fun = peek(OS, arity);
-    //   if (is_Builtin(fun)) {
-    //     return apply_builtin(heap_get_Builtin_id(fun));
-    //   }
-    const frame_address = heap_allocate_Frame(arity);
-    for (let i = arity - 1; i >= 0; i--) {
-      heap_set_child(frame_address, i, OS.pop());
-    }
-    OS.pop(); // pop fun
-    // No push to RTS for tail calls
-    E = heap_Environment_extend(
-      frame_address,
-      heap_get_Closure_environment(fun)
-    );
-    PC = heap_get_Closure_pc(fun);
-  },
-  RESET: (instr) => {
-    PC--;
-    const top_frame = RTS.pop();
-    if (is_Callframe(top_frame)) {
-      PC = heap_get_Callframe_pc(top_frame);
-      E = heap_get_Callframe_environment(top_frame);
-    }
-  },
-  PRINT: (instr) => {
-    const val = OS.pop();
-    const jsVal = address_to_JS_value(val);
-    // Optionally, check that jsVal is a string.
-    if (typeof jsVal !== "string") {
-      throw new Error("print! expects a string");
-    }
-    // Print without a newline:
-    process.stdout.write(jsVal); // Node.js; or use console.log with adjustments.
-  },
-  PRINTLN: (instr) => {
-    const val = OS.pop();
-    const jsVal = address_to_JS_value(val);
-    if (typeof jsVal !== "string") {
-      throw new Error("println! expects a string");
-    }
-    console.log(jsVal);
-  },
-  TOSTRING: (instr) => {
-    const val = OS.pop();
-    const jsVal = address_to_JS_value(val);
-    
-    // Handle reference types
-    if (typeof jsVal === 'object' && jsVal !== null && 
-        (jsVal.kind === 'reference' || jsVal.kind === 'mutable_reference')) {
-      // Get the actual value through the reference
-      let actualValue;
-      
-      // If we have frame/value indices, use them to get the actual value
-      if (jsVal.frameIndex !== undefined && jsVal.valueIndex !== undefined) {
-        actualValue = address_to_JS_value(heap_get_Environment_value(E, [jsVal.frameIndex, jsVal.valueIndex]));
-      } 
-      // Otherwise, use the inner value directly
-      else if (jsVal.inner !== undefined) {
-        actualValue = jsVal.inner;
-      }
-      
-      push(OS, JS_value_to_address(String(actualValue)));
-      return;
-    }
-    
-    // Regular case for non-references
-    const strVal = String(jsVal);
-    push(OS, JS_value_to_address(strVal));
-  },
-  TOOWNED: (instr) => {
-    const val = OS.pop();
-    const jsVal = address_to_JS_value(val);
-    const strVal = String(jsVal);
-    push(OS, JS_value_to_address(strVal));
-  },
-  DEREF_ASSIGN: (instr) => {
-    const refValue = OS.pop();  // The reference
-    const newValue = OS.pop();  // The new value (FIX: pop it, don't just peek)
-    
-    // Convert reference to JS object
-    const jsRef = address_to_JS_value(refValue);
-    
-    if (typeof jsRef !== "object" || jsRef === null || 
-        (jsRef.kind !== "reference" && jsRef.kind !== "mutable_reference")) {
-      throw new Error("Can only assign through mutable references");
-    }
-    
-    if (jsRef.kind !== "mutable_reference") {
-      throw new Error("Cannot assign through immutable reference");
-    }
-    
-    // Update the original variable through the reference
-    if (jsRef.frameIndex !== undefined && jsRef.valueIndex !== undefined) {
-      heap_set_Environment_value(E, [jsRef.frameIndex, jsRef.valueIndex], newValue);
-    } else {
-      throw new Error("Reference doesn't contain valid location information");
-    }
-  }
-};
 
 const apply_binop = (op, v2, v1) =>
   JS_value_to_address(
