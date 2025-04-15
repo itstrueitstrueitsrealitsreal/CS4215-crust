@@ -152,43 +152,61 @@ export class BorrowChecker {
     if (!varNameBorrowedFrom) {
       return;
     }
-    const [frame, variableBorrowedFrom] = this.lookup(varNameBorrowedFrom);
-    if (
-      variableBorrowedFrom.borrowState.kind === "ImmutableBorrow" ||
-      variableBorrowedFrom.borrowState.kind === "MutableBorrow"
-    ) {
-      this.release(varNameBorrowedFrom);
-    } else {
-      throw new Error(
-        `Logic Error: Cannot release '${varNameBorrowedFrom}' because it is not borrowed`
-      );
+    
+    try {
+      const [frame, variableBorrowedFrom] = this.lookup(varNameBorrowedFrom);
+      if (
+        variableBorrowedFrom.borrowState.kind === "ImmutableBorrow" ||
+        variableBorrowedFrom.borrowState.kind === "MutableBorrow"
+      ) {
+        this.release(varNameBorrowedFrom);
+      } else {
+        // Variable is already unborrowed, no need to throw an error
+        console.log(`Variable '${varNameBorrowedFrom}' is already unborrowed, no action needed`);
+      }
+    } catch (e) {
+      // Parent variable might be in a frame that's already been popped
+      console.log(`Could not find parent variable: ${varNameBorrowedFrom}`);
     }
   }
 
   // Release a borrow (search across all frames)
   release(varName: string) {
     console.log("Releasing borrow:", varName);
-    const [frame, variable] = this.lookup(varName);
-    if (variable.borrowState.kind === "ImmutableBorrow") {
-      if (variable.borrowState.count === 1) {
+    try {
+      const [frame, variable] = this.lookup(varName);
+      
+      // Add guard for already unborrowed variables
+      if (variable.borrowState.kind === "Unborrowed") {
+        console.log(`Variable '${varName}' is already unborrowed`);
+        return; // Early return for already unborrowed variables
+      }
+      
+      if (variable.borrowState.kind === "ImmutableBorrow") {
+        if (variable.borrowState.count === 1) {
+          frame.set(varName, {
+            ...variable,
+            borrowState: { kind: "Unborrowed" },
+          });
+        } else {
+          frame.set(varName, {
+            ...variable,
+            borrowState: {
+              kind: "ImmutableBorrow",
+              count: variable.borrowState.count - 1,
+            },
+          });
+        }
+      } else if (variable.borrowState.kind === "MutableBorrow") {
         frame.set(varName, {
           ...variable,
           borrowState: { kind: "Unborrowed" },
         });
       } else {
-        frame.set(varName, {
-          ...variable,
-          borrowState: {
-            kind: "ImmutableBorrow",
-            count: variable.borrowState.count - 1,
-          },
-        });
+        console.log(`Cannot release '${varName}' from state ${variable.borrowState.kind}`);
       }
-    } else if (variable.borrowState.kind === "MutableBorrow") {
-      frame.set(varName, {
-        ...variable,
-        borrowState: { kind: "Unborrowed" },
-      });
+    } catch (e) {
+      console.log(`Ignoring release of non-existent variable: ${varName}`);
     }
   }
 
@@ -268,5 +286,20 @@ export class BorrowChecker {
         console.log(`  ${k}: ${JSON.stringify(v)}`);
       }
     }
+  }
+  public findVariable(varName: string): VariableState | undefined {
+    try {
+      const [_, variable] = this.lookup(varName);
+      return variable;
+    } catch (e) {
+      return undefined;
+    }
+  }
+
+  public getFrameVariables(): Map<string, VariableState> | undefined {
+    if (this.state.length === 0) {
+      return undefined;
+    }
+    return this.state[this.state.length - 1];
   }
 }

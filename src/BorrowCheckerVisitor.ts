@@ -223,26 +223,41 @@ export class BorrowCheckerVisitor
 
   visitLambdaCall(ctx: LambdaCallContext): void {
     console.log("Visiting lambda call");
-
+  
     // Visit the arguments (if any)
     const argList = ctx.argList();
     if (!argList) {
       return;
     }
-
+  
     for (let i = 0; i < argList.expression().length; i++) {
       const argExpression = argList.expression(i);
       // Visit the argument expression
       this.visit(argExpression);
     }
-
+  
     // Release all borrows after the lambda call
     for (let i = 0; i < argList.expression().length; i++) {
       const argExpression = argList.expression(i);
+      
+      // First try to extract borrowedFrom if it's a borrow expression like &mut x
       const borrowedFrom = this.extractBorrowedFromIfBorrow(argExpression);
       if (borrowedFrom) {
         console.log(`Releasing borrow: ${borrowedFrom}`);
         this.checker.release(borrowedFrom); // Release the borrow
+      } 
+      // Also check if the argument is a reference variable like 'r'
+      else if (argExpression.IDENTIFIER()) {
+        const varName = argExpression.IDENTIFIER().getText();
+        
+        // Use the public findVariable method instead of private lookup
+        const varInfo = this.checker.findVariable(varName);
+        
+        // If this variable is a reference to another variable
+        if (varInfo && varInfo.borrowedFrom) {
+          console.log(`Releasing reference variable borrow: ${varInfo.borrowedFrom}`);
+          this.checker.release(varInfo.borrowedFrom);
+        }
       }
     }
   }
@@ -324,7 +339,22 @@ export class BorrowCheckerVisitor
 
   visitPrintlnStmt(ctx: PrintlnStmtContext): void {
     console.log("Visiting println statement");
-    this.processExpressionsInPrint(ctx.expression(), "println statement");
+    
+    // First, release any outstanding reference variable borrows in the current scope
+    const currentFrame = this.checker.getFrameVariables();
+    if (currentFrame) {
+      for (const [varName, varInfo] of currentFrame.entries()) {
+        if (varInfo.borrowedFrom) {
+          console.log(`Releasing reference borrow before println: ${varInfo.borrowedFrom}`);
+          this.checker.release(varInfo.borrowedFrom);
+        }
+      }
+    }
+  
+    // Now process the expressions in the println statement
+    if (ctx.expression()) {
+      this.processExpressionsInPrint(ctx.expression(), "println statement");
+    }
   }
 
   /**

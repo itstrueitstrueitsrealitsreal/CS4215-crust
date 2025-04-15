@@ -8,7 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "generate-parser": "antlr4ng -Dlanguage=TypeScript -visitor -o src/parser src/Crust.g4",
-    "dev": "rollup -c; node dist/Main.js"
+    "test": "rollup -c && node dist/Main.js | tee test-results.txt"
   },
   "repository": {
     "type": "git",
