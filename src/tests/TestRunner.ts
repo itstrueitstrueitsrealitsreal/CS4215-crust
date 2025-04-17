@@ -8,49 +8,51 @@ import { TestCase } from "./TestCases";
 export class TestConductor implements IRunnerPlugin {
   outputs: string[] = [];
   errors: string[] = [];
-  originalConsoleLog: any;
-  originalConsoleError: any;
-  
-  constructor() {
-    // Override console.log to capture output
-    this.originalConsoleLog = console.log;
-    this.originalConsoleError = console.error;
-    console.log = (message: any, ...optionalParams: any[]) => {
-      const output = String(message);
-      this.outputs.push(output);
-      this.originalConsoleLog(message, ...optionalParams);
-    };
-    console.error = (message: any, ...optionalParams: any[]) => {
-      const output = String(message);
-      this.outputs.push(output);
-      this.originalConsoleError(message, ...optionalParams);
-    };
-  }
-  
+  originalConsoleLog = console.log;
+  originalConsoleError = console.error;
+
+  // Only capture actual program output, not debugging logs
   sendOutput(output: string): void {
     this.outputs.push(output);
     this.originalConsoleLog(output);
   }
-  
+
   sendError(error: any): void {
     const errorMsg = error instanceof Error ? error.message : String(error);
     this.errors.push(`Error: ${errorMsg}`);
+    this.outputs.push(`Error: ${errorMsg}`); // Add to outputs for test validation
     this.originalConsoleError(`Error: ${errorMsg}`);
   }
-  
+
   // Stub implementations for required methods
-  requestFile() { return Promise.resolve(undefined); }
-  requestChunk() { return Promise.resolve(""); }
-  requestInput() { return Promise.resolve(""); }
-  tryRequestInput() { return undefined; }
+  requestFile() {
+    return Promise.resolve(undefined);
+  }
+  requestChunk() {
+    return Promise.resolve("");
+  }
+  requestInput() {
+    return Promise.resolve("");
+  }
+  tryRequestInput() {
+    return undefined;
+  }
   updateStatus() {}
   hostLoadPlugin() {}
-  registerPlugin() { return {} as any; }
+  registerPlugin() {
+    return {} as any;
+  }
   unregisterPlugin() {}
-  registerModule() { return {} as any; }
+  registerModule() {
+    return {} as any;
+  }
   unregisterModule() {}
-  importAndRegisterExternalPlugin() { return Promise.resolve({} as any); }
-  importAndRegisterExternalModule() { return Promise.resolve({} as any); }
+  importAndRegisterExternalPlugin() {
+    return Promise.resolve({} as any);
+  }
+  importAndRegisterExternalModule() {
+    return Promise.resolve({} as any);
+  }
   name?: string;
   destroy() {
     // Restore original console.log when done
@@ -64,10 +66,10 @@ export class TestConductor implements IRunnerPlugin {
  */
 export async function runTest(test: TestCase): Promise<boolean> {
   console.log(`\n----- Running test: ${test.name} -----`);
-  
+
   const conductor = new TestConductor();
   const evaluator = new CrustEvaluator(conductor);
-  
+
   try {
     await evaluator.evaluateChunk(test.code);
   } catch (error) {
@@ -75,24 +77,38 @@ export async function runTest(test: TestCase): Promise<boolean> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     conductor.outputs.push(`Error: ${errorMessage}`);
   }
-  
-  // Simply check if all expected outputs are in the actual outputs
-  let allFound = true;
-  for (const expected of test.expectedOutput) {
-    if (!conductor.outputs.some(out => out.includes(expected))) {
-      console.log(`❌ Expected output not found: "${expected}"`);
-      console.log(`Actual outputs:`, conductor.outputs);
-      allFound = false;
+
+  // Check if the number of outputs matches expected outputs
+  if (test.expectedOutput.length !== conductor.outputs.length) {
+    console.log(
+      `❌ Expected ${test.expectedOutput.length} outputs but got ${conductor.outputs.length}`
+    );
+    console.log(`Expected: ${test.expectedOutput}`);
+    console.log(`Actual: ${conductor.outputs}`);
+    return fail();
+  }
+
+  // Check outputs in order with exact matching
+  for (let i = 0; i < test.expectedOutput.length; i++) {
+    if (conductor.outputs[i] !== test.expectedOutput[i]) {
+      console.log(`❌ Output at position ${i} doesn't match:`);
+      console.log(`Expected: "${test.expectedOutput[i]}"`);
+      console.log(`Actual: "${conductor.outputs[i]}"`);
+      return fail();
     }
   }
-  
-  if (allFound) {
-    console.log(`✅ Test passed!`);
-    return true;
-  } else {
-    console.log(`❌ Test failed`);
-    return false;
-  }
+
+  return pass();
+}
+
+function fail() {
+  console.log(`❌ Test failed!`);
+  return false;
+}
+
+function pass() {
+  console.log(`✅ Test passed!`);
+  return true;
 }
 
 /**
@@ -106,7 +122,7 @@ export async function runTests(tests: TestCase[]): Promise<{
   let passed = 0;
   let failed = 0;
   const failedTests: string[] = [];
-  
+
   for (const test of tests) {
     try {
       const success = await runTest(test);
@@ -122,6 +138,6 @@ export async function runTests(tests: TestCase[]): Promise<{
       failedTests.push(test.name);
     }
   }
-  
+
   return { passed, failed, failedTests };
 }
