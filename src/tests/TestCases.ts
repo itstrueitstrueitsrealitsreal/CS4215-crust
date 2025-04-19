@@ -136,7 +136,9 @@ export const testCases: TestCase[] = [
         // Using a after move should fail
         println!("{}", a);
       }`,
-    expectedOutput: ["Cannot immutably borrow 'a' because it has been moved"],
+    expectedOutput: [
+      "Error: Cannot immutably borrow 'a' because it has been moved",
+    ],
   },
 
   // Multiple immutable borrows
@@ -160,7 +162,7 @@ export const testCases: TestCase[] = [
         println!("{}", r1);
       }`,
     expectedOutput: [
-      "Cannot mutably borrow 'x' while it is immutably borrowed",
+      "Error: Cannot mutably borrow 'x' while it is immutably borrowed",
     ],
   },
 

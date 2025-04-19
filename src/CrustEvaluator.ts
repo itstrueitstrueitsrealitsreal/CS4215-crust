@@ -24,7 +24,7 @@ export class CrustEvaluator extends BasicEvaluator {
 
   async evaluateChunk(chunk: string): Promise<void> {
     try {
-      this.conductor.sendOutput(`Evaluating chunk: ${chunk}`);
+      //   this.conductor.sendOutput(`Evaluating chunk: ${chunk}`);
       const inputStream = CharStream.fromString(chunk);
       const lexer = new CrustLexer(inputStream);
       const tokenStream = new CommonTokenStream(lexer);
@@ -50,7 +50,7 @@ export class CrustEvaluator extends BasicEvaluator {
 
       // const result = this.visitor.visit(tree);
       console.log(`Result: ${result}`);
-      this.conductor.sendOutput(`Result: ${result}`);
+      //   this.conductor.sendOutput(`Result: ${result}`);
     } catch (error) {
       this.conductor.sendOutput(
         `Error: ${error instanceof Error ? error.message : String(error)}`
