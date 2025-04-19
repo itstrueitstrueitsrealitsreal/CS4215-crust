@@ -132,6 +132,11 @@ export class BorrowChecker {
         `Cannot mutably borrow '${varName}' while it is immutably borrowed`
       );
     }
+    if (variable.borrowState.kind === "MutableBorrow") {
+      throw new Error(
+        `Cannot mutably borrow '${varName}' while it is already mutably borrowed`
+      );
+    }
     if (!variable.isMutable) {
       throw new Error(
         `Cannot mutably borrow '${varName}' because it is immutable`
@@ -152,7 +157,7 @@ export class BorrowChecker {
     if (!varNameBorrowedFrom) {
       return;
     }
-    
+
     try {
       const [frame, variableBorrowedFrom] = this.lookup(varNameBorrowedFrom);
       if (
@@ -162,7 +167,9 @@ export class BorrowChecker {
         this.release(varNameBorrowedFrom);
       } else {
         // Variable is already unborrowed, no need to throw an error
-        console.log(`Variable '${varNameBorrowedFrom}' is already unborrowed, no action needed`);
+        console.log(
+          `Variable '${varNameBorrowedFrom}' is already unborrowed, no action needed`
+        );
       }
     } catch (e) {
       // Parent variable might be in a frame that's already been popped
@@ -175,13 +182,13 @@ export class BorrowChecker {
     console.log("Releasing borrow:", varName);
     try {
       const [frame, variable] = this.lookup(varName);
-      
+
       // Add guard for already unborrowed variables
       if (variable.borrowState.kind === "Unborrowed") {
         console.log(`Variable '${varName}' is already unborrowed`);
         return; // Early return for already unborrowed variables
       }
-      
+
       if (variable.borrowState.kind === "ImmutableBorrow") {
         if (variable.borrowState.count === 1) {
           frame.set(varName, {
@@ -203,7 +210,9 @@ export class BorrowChecker {
           borrowState: { kind: "Unborrowed" },
         });
       } else {
-        console.log(`Cannot release '${varName}' from state ${variable.borrowState.kind}`);
+        console.log(
+          `Cannot release '${varName}' from state ${variable.borrowState.kind}`
+        );
       }
     } catch (e) {
       console.log(`Ignoring release of non-existent variable: ${varName}`);
