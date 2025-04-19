@@ -323,6 +323,14 @@ export class CrustEvaluatorVisitor
     // Patch the false branch of the condition to exit the loop.
     this.instrs[branchIndex].addr = this.wc;
 
+    // Pop the condition value from the stack when exiting the loop
+    this.instrs[this.wc++] = { tag: "POP" };
+
+    // Push undefined as the result of the while statement
+    this.instrs[this.wc++] = { tag: "LDC", val: undefined };
+
+    // DO NOT add another POP instruction here or in the surrounding code
+
     // Patch any break instructions to jump here (immediately after the loop).
     const breaks = this.breakTargets.pop();
     for (const breakIndex of breaks) {
@@ -592,6 +600,9 @@ export class CrustEvaluatorVisitor
 
     // Emit an instruction to print without a newline.
     this.instrs[this.wc++] = { tag: "PRINT" };
+
+    // Add this line to push undefined as the result of print (same as println)
+    this.instrs[this.wc++] = { tag: "LDC", val: undefined };
   }
 
   visitPrintlnStmt(ctx: PrintlnStmtContext): void {
@@ -609,6 +620,9 @@ export class CrustEvaluatorVisitor
 
     // Emit PRINTLN instruction which prints with a newline.
     this.instrs[this.wc++] = { tag: "PRINTLN" };
+
+    // Add this line to push undefined as the result of println
+    this.instrs[this.wc++] = { tag: "LDC", val: undefined };
   }
 
   // fun: (comp, ce) => {
