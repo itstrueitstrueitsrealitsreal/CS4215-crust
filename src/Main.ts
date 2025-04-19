@@ -1,10 +1,10 @@
-import { CrustEvaluator } from "./CrustEvaluator";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
-import { TestCase, testCases } from "./tests/TestCases";
+import { testCases } from "./tests/TestCases";
 import { runTests } from "./tests/TestRunner";
 
 // Enhanced MockConductor that captures outputs for testing
-export class TestConductor implements IRunnerPlugin { // Make sure it's exported if TestRunner is separate
+export class TestConductor implements IRunnerPlugin {
+  // Make sure it's exported if TestRunner is separate
   outputs: string[] = [];
   errors: string[] = [];
   // Keep original console methods for optional logging during tests
@@ -27,18 +27,34 @@ export class TestConductor implements IRunnerPlugin { // Make sure it's exported
   }
 
   // Stub implementations for required methods
-  requestFile() { return Promise.resolve(undefined); }
-  requestChunk() { return Promise.resolve(""); }
-  requestInput() { return Promise.resolve(""); }
-  tryRequestInput() { return undefined; }
+  requestFile() {
+    return Promise.resolve(undefined);
+  }
+  requestChunk() {
+    return Promise.resolve("");
+  }
+  requestInput() {
+    return Promise.resolve("");
+  }
+  tryRequestInput() {
+    return undefined;
+  }
   updateStatus() {}
   hostLoadPlugin() {}
-  registerPlugin() { return {} as any; }
+  registerPlugin() {
+    return {} as any;
+  }
   unregisterPlugin() {}
-  registerModule() { return {} as any; }
+  registerModule() {
+    return {} as any;
+  }
   unregisterModule() {}
-  importAndRegisterExternalPlugin() { return Promise.resolve({} as any); }
-  importAndRegisterExternalModule() { return Promise.resolve({} as any); }
+  importAndRegisterExternalPlugin() {
+    return Promise.resolve({} as any);
+  }
+  importAndRegisterExternalModule() {
+    return Promise.resolve({} as any);
+  }
   name?: string;
 }
 
@@ -65,7 +81,6 @@ async function main() {
   }
   // No need to exit if tests pass
 }
-
 
 // Run the tests
 main().catch((error) => {

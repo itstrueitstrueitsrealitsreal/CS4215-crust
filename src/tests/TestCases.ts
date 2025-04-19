@@ -7,8 +7,8 @@ export interface TestCase {
 
 // Export the test cases array
 export const testCases: TestCase[] = [
-   // If-else statement
-   {
+  // If-else statement
+  {
     name: "If-else statement",
     code: `{
       let x: i64 = 10;
@@ -20,7 +20,7 @@ export const testCases: TestCase[] = [
         println!("x is greater than or equal to y");
       }
     }`,
-    expectedOutput: ["x is less than y"]
+    expectedOutput: ["x is less than y"],
   },
   // Basic while loop
   {
@@ -36,9 +36,9 @@ export const testCases: TestCase[] = [
       
       println!("Sum of 0 to 4 is: {}", sum);
     }`,
-    expectedOutput: ["Sum of 0 to 4 is: 10"]
+    expectedOutput: ["Sum of 0 to 4 is: 10"],
   },
-  
+
   // While loop with break
   {
     name: "While loop with break",
@@ -54,9 +54,9 @@ export const testCases: TestCase[] = [
       
       println!("Final value of i: {}", i);
     }`,
-    expectedOutput: ["Final value of i: 5"]
+    expectedOutput: ["Final value of i: 5"],
   },
-  
+
   // Nested blocks with shadowing
   {
     name: "Nested blocks with shadowing",
@@ -72,7 +72,7 @@ export const testCases: TestCase[] = [
       }
       println!("Outer x: {}", x);
     }`,
-    expectedOutput: ["Innermost x: 30", "Middle x: 20", "Outer x: 10"]
+    expectedOutput: ["Innermost x: 30", "Middle x: 20", "Outer x: 10"],
   },
   // Functions with multiple parameters
   {
@@ -100,9 +100,9 @@ export const testCases: TestCase[] = [
       println!("Max of {} and {} is {}", x, y, max(x, y));
       println!("Min of {} and {} is {}", x, y, min(x, y));
     }`,
-    expectedOutput: ["Max of 15 and 30 is 30", "Min of 15 and 30 is 15"]
+    expectedOutput: ["Max of 15 and 30 is 30", "Min of 15 and 30 is 15"],
   },
-  
+
   // Basic variable declaration
   {
     name: "Basic variable declaration and primitive types",
@@ -112,7 +112,7 @@ export const testCases: TestCase[] = [
         let s: &str = "hello";
         println!("x: {}, y: {}, s: {}", x, y, s);
       }`,
-    expectedOutput: ["x: 42, y: true, s: hello"]
+    expectedOutput: ["x: 42, y: true, s: hello"],
   },
 
   // Copy types behavior
@@ -124,7 +124,7 @@ export const testCases: TestCase[] = [
         y = 10;              // Modifying y
         println!("x: {}, y: {}", x, y);  // x should still be 5
       }`,
-    expectedOutput: ["x: 5, y: 10"]
+    expectedOutput: ["x: 5, y: 10"],
   },
 
   // Move semantics with non-copy types
@@ -136,7 +136,9 @@ export const testCases: TestCase[] = [
         // Using a after move should fail
         println!("{}", a);
       }`,
-    expectedOutput: ["Cannot immutably borrow 'a' because it has been moved"]
+    expectedOutput: [
+      "Error: Cannot immutably borrow 'a' because it has been moved",
+    ],
   },
 
   // Multiple immutable borrows
@@ -148,7 +150,7 @@ export const testCases: TestCase[] = [
         let r1: &i64 = &x;
         println!("x: {}, r: {}, r1: {}", x, r, r1);
       }`,
-    expectedOutput: ["x: 42, r: 42, r1: 42"]
+    expectedOutput: ["x: 42, r: 42, r1: 42"],
   },
   // Mutable and immutable borrow conflict
   {
@@ -159,7 +161,9 @@ export const testCases: TestCase[] = [
         let r2: &mut i64 = &mut x;  // Should fail - can't have mutable borrow while immutable exists
         println!("{}", r1);
       }`,
-    expectedOutput: ["Cannot mutably borrow 'x' while it is immutably borrowed"]
+    expectedOutput: [
+      "Error: Cannot mutably borrow 'x' while it is immutably borrowed",
+    ],
   },
 
   // Function borrowing
@@ -175,7 +179,7 @@ export const testCases: TestCase[] = [
         modify(&mut a);
         println!("Result: {}", a);
       }`,
-    expectedOutput: ["Result: 12"]
+    expectedOutput: ["Result: 12"],
   },
   // Scopes and lifetimes
   {
@@ -191,7 +195,7 @@ export const testCases: TestCase[] = [
         // Now we can use s again
         println!("Final value: {}", s);
       }`,
-    expectedOutput: ["Final value: modified"]
+    expectedOutput: ["Final value: modified"],
   },
 
   // Dereferencing copy types
@@ -204,7 +208,7 @@ export const testCases: TestCase[] = [
         let val1: i64 = *r;
         println!("x: {}, val: {}, val1: {}", x, val, val1);
       }`,
-    expectedOutput: ["x: 42, val: 42, val1: 42"]
+    expectedOutput: ["x: 42, val: 42, val1: 42"],
   },
   // Function with multiple borrowed parameters
   {
@@ -219,7 +223,7 @@ export const testCases: TestCase[] = [
         let result: i64 = sum(&x, &y);
         println!("Sum: {}", result);
       }`,
-    expectedOutput: ["Sum: 15"]
+    expectedOutput: ["Sum: 15"],
   },
   // Returning references from functions
   {
@@ -233,7 +237,7 @@ export const testCases: TestCase[] = [
         let r: &i64 = get_ref(&x);
         println!("Referenced value: {}", *r);
       }`,
-    expectedOutput: ["Referenced value: 42"]
+    expectedOutput: ["Referenced value: 42"],
   },
   {
     name: "Mixed reference access patterns",
@@ -262,7 +266,11 @@ export const testCases: TestCase[] = [
       
       println!("Final value: {}", value);
     }`,
-    expectedOutput: ["Immutable refs: 50 and 50", "After mutable ref: 60", "Final value: 60"]
+    expectedOutput: [
+      "Immutable refs: 50 and 50",
+      "After mutable ref: 60",
+      "Final value: 60",
+    ],
   },
   {
     name: "References without lifetimes",
@@ -279,7 +287,7 @@ export const testCases: TestCase[] = [
       // Original value is modified
       println!("After scope: {}", value);
     }`,
-    expectedOutput: ["Inside scope: 100", "After scope: 100"]
+    expectedOutput: ["Inside scope: 100", "After scope: 100"],
   },
   {
     name: "Reference reassignment",
@@ -301,7 +309,7 @@ export const testCases: TestCase[] = [
       let _unused: i64 = 0;
       println!("a: {}, b: {}", a, b);
     }`,
-    expectedOutput: ["a: 10, b: 20"]
+    expectedOutput: ["a: 10, b: 20"],
   },
   {
     name: "Variable shadowing with references",
@@ -314,7 +322,7 @@ export const testCases: TestCase[] = [
       }
       println!("Outer value: {}", x);
     }`,
-    expectedOutput: ["Inner reference: 20", "Outer value: 10"]
+    expectedOutput: ["Inner reference: 20", "Outer value: 10"],
   },
   {
     name: "Multiple reference reassignments",
@@ -334,7 +342,7 @@ export const testCases: TestCase[] = [
       
       println!("Values: {}, {}, {}", a, b, c);
     }`,
-    expectedOutput: ["Values: 10, 20, 30"]
+    expectedOutput: ["Values: 10, 20, 30"],
   },
   {
     name: "Sequential mutability",
@@ -356,7 +364,11 @@ export const testCases: TestCase[] = [
       
       println!("Final value: {}", x);
     }`,
-    expectedOutput: ["Immutable borrow: 5", "After mutable borrow: 10", "Final value: 10"]
+    expectedOutput: [
+      "Immutable borrow: 5",
+      "After mutable borrow: 10",
+      "Final value: 10",
+    ],
   },
   {
     name: "Function with multiple reference parameters",
@@ -374,7 +386,7 @@ export const testCases: TestCase[] = [
       
       println!("Updated values: x={}, y={}, z={}", x, y, z);
     }`,
-    expectedOutput: ["Updated values: x=15, y=25, z=5"]
+    expectedOutput: ["Updated values: x=15, y=25, z=5"],
   },
   {
     name: "Multiple mutable references in different scopes",
@@ -395,7 +407,11 @@ export const testCases: TestCase[] = [
       
       println!("Final value: {}", value);
     }`,
-    
-    expectedOutput: ["First mutation: 200", "Second mutation: 300", "Final value: 300"]
+
+    expectedOutput: [
+      "First mutation: 200",
+      "Second mutation: 300",
+      "Final value: 300",
+    ],
   },
 ];
