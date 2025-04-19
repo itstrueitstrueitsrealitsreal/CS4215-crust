@@ -7,8 +7,8 @@ export interface TestCase {
 
 // Export the test cases array
 export const testCases: TestCase[] = [
-   // If-else statement
-   {
+  // If-else statement
+  {
     name: "If-else statement",
     code: `{
       let x: i64 = 10;
@@ -20,7 +20,7 @@ export const testCases: TestCase[] = [
         println!("x is greater than or equal to y");
       }
     }`,
-    expectedOutput: ["x is less than y"]
+    expectedOutput: ["x is less than y"],
   },
   // Basic while loop
   {
@@ -36,9 +36,9 @@ export const testCases: TestCase[] = [
       
       println!("Sum of 0 to 4 is: {}", sum);
     }`,
-    expectedOutput: ["Sum of 0 to 4 is: 10"]
+    expectedOutput: ["Sum of 0 to 4 is: 10"],
   },
-  
+
   // While loop with break
   {
     name: "While loop with break",
@@ -54,9 +54,9 @@ export const testCases: TestCase[] = [
       
       println!("Final value of i: {}", i);
     }`,
-    expectedOutput: ["Final value of i: 5"]
+    expectedOutput: ["Final value of i: 5"],
   },
-  
+
   // Nested blocks with shadowing
   {
     name: "Nested blocks with shadowing",
@@ -72,7 +72,7 @@ export const testCases: TestCase[] = [
       }
       println!("Outer x: {}", x);
     }`,
-    expectedOutput: ["Innermost x: 30", "Middle x: 20", "Outer x: 10"]
+    expectedOutput: ["Innermost x: 30", "Middle x: 20", "Outer x: 10"],
   },
   // Functions with multiple parameters
   {
@@ -100,9 +100,9 @@ export const testCases: TestCase[] = [
       println!("Max of {} and {} is {}", x, y, max(x, y));
       println!("Min of {} and {} is {}", x, y, min(x, y));
     }`,
-    expectedOutput: ["Max of 15 and 30 is 30", "Min of 15 and 30 is 15"]
+    expectedOutput: ["Max of 15 and 30 is 30", "Min of 15 and 30 is 15"],
   },
-  
+
   // Basic variable declaration
   {
     name: "Basic variable declaration and primitive types",
@@ -112,7 +112,7 @@ export const testCases: TestCase[] = [
         let s: &str = "hello";
         println!("x: {}, y: {}, s: {}", x, y, s);
       }`,
-    expectedOutput: ["x: 42, y: true, s: hello"]
+    expectedOutput: ["x: 42, y: true, s: hello"],
   },
 
   // Copy types behavior
@@ -124,7 +124,7 @@ export const testCases: TestCase[] = [
         y = 10;              // Modifying y
         println!("x: {}, y: {}", x, y);  // x should still be 5
       }`,
-    expectedOutput: ["x: 5, y: 10"]
+    expectedOutput: ["x: 5, y: 10"],
   },
 
   // Move semantics with non-copy types
@@ -136,7 +136,7 @@ export const testCases: TestCase[] = [
         // Using a after move should fail
         println!("{}", a);
       }`,
-    expectedOutput: ["Cannot immutably borrow 'a' because it has been moved"]
+    expectedOutput: ["Cannot immutably borrow 'a' because it has been moved"],
   },
 
   // Multiple immutable borrows
@@ -148,7 +148,7 @@ export const testCases: TestCase[] = [
         let r1: &i64 = &x;
         println!("x: {}, r: {}, r1: {}", x, r, r1);
       }`,
-    expectedOutput: ["x: 42, r: 42, r1: 42"]
+    expectedOutput: ["x: 42, r: 42, r1: 42"],
   },
   // Mutable and immutable borrow conflict
   {
@@ -159,7 +159,9 @@ export const testCases: TestCase[] = [
         let r2: &mut i64 = &mut x;  // Should fail - can't have mutable borrow while immutable exists
         println!("{}", r1);
       }`,
-    expectedOutput: ["Cannot mutably borrow 'x' while it is immutably borrowed"]
+    expectedOutput: [
+      "Cannot mutably borrow 'x' while it is immutably borrowed",
+    ],
   },
 
   // Function borrowing
@@ -175,7 +177,7 @@ export const testCases: TestCase[] = [
         modify(&mut a);
         println!("Result: {}", a);
       }`,
-    expectedOutput: ["Result: 12"]
+    expectedOutput: ["Result: 12"],
   },
   // Scopes and lifetimes
   {
@@ -191,7 +193,7 @@ export const testCases: TestCase[] = [
         // Now we can use s again
         println!("Final value: {}", s);
       }`,
-    expectedOutput: ["Final value: modified"]
+    expectedOutput: ["Final value: modified"],
   },
 
   // Dereferencing copy types
@@ -204,7 +206,7 @@ export const testCases: TestCase[] = [
         let val1: i64 = *r;
         println!("x: {}, val: {}, val1: {}", x, val, val1);
       }`,
-    expectedOutput: ["x: 42, val: 42, val1: 42"]
+    expectedOutput: ["x: 42, val: 42, val1: 42"],
   },
   // Function with multiple borrowed parameters
   {
@@ -219,7 +221,7 @@ export const testCases: TestCase[] = [
         let result: i64 = sum(&x, &y);
         println!("Sum: {}", result);
       }`,
-    expectedOutput: ["Sum: 15"]
+    expectedOutput: ["Sum: 15"],
   },
   // Returning references from functions
   {
@@ -233,7 +235,7 @@ export const testCases: TestCase[] = [
         let r: &i64 = get_ref(&x);
         println!("Referenced value: {}", *r);
       }`,
-    expectedOutput: ["Referenced value: 42"]
+    expectedOutput: ["Referenced value: 42"],
   },
   {
     name: "Mixed reference access patterns",
@@ -262,7 +264,11 @@ export const testCases: TestCase[] = [
       
       println!("Final value: {}", value);
     }`,
-    expectedOutput: ["Immutable refs: 50 and 50", "After mutable ref: 60", "Final value: 60"]
+    expectedOutput: [
+      "Immutable refs: 50 and 50",
+      "After mutable ref: 60",
+      "Final value: 60",
+    ],
   },
   {
     name: "References without lifetimes",
@@ -279,7 +285,7 @@ export const testCases: TestCase[] = [
       // Original value is modified
       println!("After scope: {}", value);
     }`,
-    expectedOutput: ["Inside scope: 100", "After scope: 100"]
+    expectedOutput: ["Inside scope: 100", "After scope: 100"],
   },
   {
     name: "Reference reassignment",
@@ -301,7 +307,7 @@ export const testCases: TestCase[] = [
       let _unused: i64 = 0;
       println!("a: {}, b: {}", a, b);
     }`,
-    expectedOutput: ["a: 10, b: 20"]
+    expectedOutput: ["a: 10, b: 20"],
   },
   {
     name: "Variable shadowing with references",
@@ -314,7 +320,7 @@ export const testCases: TestCase[] = [
       }
       println!("Outer value: {}", x);
     }`,
-    expectedOutput: ["Inner reference: 20", "Outer value: 10"]
+    expectedOutput: ["Inner reference: 20", "Outer value: 10"],
   },
   {
     name: "Multiple reference reassignments",
@@ -334,7 +340,7 @@ export const testCases: TestCase[] = [
       
       println!("Values: {}, {}, {}", a, b, c);
     }`,
-    expectedOutput: ["Values: 10, 20, 30"]
+    expectedOutput: ["Values: 10, 20, 30"],
   },
   {
     name: "Sequential mutability",
@@ -356,7 +362,11 @@ export const testCases: TestCase[] = [
       
       println!("Final value: {}", x);
     }`,
-    expectedOutput: ["Immutable borrow: 5", "After mutable borrow: 10", "Final value: 10"]
+    expectedOutput: [
+      "Immutable borrow: 5",
+      "After mutable borrow: 10",
+      "Final value: 10",
+    ],
   },
   {
     name: "Function with multiple reference parameters",
@@ -374,7 +384,7 @@ export const testCases: TestCase[] = [
       
       println!("Updated values: x={}, y={}, z={}", x, y, z);
     }`,
-    expectedOutput: ["Updated values: x=15, y=25, z=5"]
+    expectedOutput: ["Updated values: x=15, y=25, z=5"],
   },
   {
     name: "Multiple mutable references in different scopes",
@@ -395,7 +405,496 @@ export const testCases: TestCase[] = [
       
       println!("Final value: {}", value);
     }`,
-    
-    expectedOutput: ["First mutation: 200", "Second mutation: 300", "Final value: 300"]
+
+    expectedOutput: [
+      "First mutation: 200",
+      "Second mutation: 300",
+      "Final value: 300",
+    ],
   },
+  {
+    name: "Test 1",
+    code: `{
+    let a: &str = "hello";
+    let b: &str = a;
+    println!("{}", a);
+    // Should pass
+    let c: String = "hello".to_string();
+    // let d: String = c;
+    println!("{}", c);
+  }`,
+    expectedOutput: [],
+  },
+  // {
+  //   name: "Test 2",
+  //   code: `{
+  //     let fact_iter = |n, i, acc| {
+  //         if i > n {
+  //             return acc;
+  //         } else {
+  //             return fact_iter(n, i + 1, acc * i);
+  //         }
+  //     };
+  //     let fact = |n| {
+  //         return fact_iter(n, 1, 1);
+  //     };
+  //     fact(4);
+  // }`,
+  //   expectedOutput: [],
+  // },
+  {
+    name: "Factorial",
+    code: `{
+        fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+            if (i > n) {
+                let x : i64 = 5;
+                return acc;
+            } else {
+                return fact_iter(n, i + 1, acc * i);
+            }
+        }
+        fn fact(n: i64) -> i64 {
+            return fact_iter(n, 1, 1);
+        };
+        let x : i64 = fact_iter(4, 1, 1);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Factorial, assignment",
+    code: `{
+        fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+            if (i > n) {
+                let x : i64 = 5;
+                return acc;
+            } else {
+                return fact_iter(n, i + 1, acc * i);
+            }
+        }
+        fn fact(n: i64) -> i64 {
+            return fact_iter(n, 1, 1);
+        };
+        let x : i64 = fact_iter(4, 1, 1);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Factorial, assignment wrong type",
+    code: `{
+      fn fact_iter(n: i64, i: i64, acc: i64) -> i64 {
+          if (i > n) {
+              let x : i64 = 5;
+              return acc;
+          } else {
+              return fact_iter(n, i + 1, acc * i);
+          }
+      }
+      let x : String = fact_iter(3, 1, 1);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Function declaration",
+    code: `{
+      fn func(x: i64) -> i64 {
+          return 5;
+      }
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Function declaration",
+    code: `{
+      fn func(x: i64) -> i64 {
+          return 5;
+      }
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Variable scope",
+    code: `{
+      {let x : String = "hello".to_string();};
+      let x: String = "bye".to_string();
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Copy type assignment",
+    code: `{
+      let mut x: i64 = 5;
+      let mut y: i64 = x;
+      y;
+      x;
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Move type assignment, should fail borrow check",
+    code: `{
+      let mut x: String = "hello".to_string();
+      let mut y: String = x;
+      y;
+      x;
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Move type assignment 2, should fail borrow check",
+    code: `{
+      let a : String = "hello".to_string();
+      let b : String = a;
+      println!("{}", a);
+      println!("{}", b);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Reassigning to moved variable",
+    code: `{
+      let mut x: String = "hello".to_string();
+      let mut y: String = x;
+      x = "world".to_string();
+      y = "world".to_string();
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "❌ Mutable borrow while immutable borrow is still active",
+    code: `{
+      let mut x: i64 = 5;
+      let r1: & i64 = &x;
+      let r2: &mut i64 = &mut x;
+      println!("r1: {}, r2: {}", r1, r2);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Double print then move should work",
+    code: `{
+      let a : String = "hello".to_string();
+      println!("{}", a);
+      println!("{}", a);
+      let b : String = a;
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Double print then move should work",
+    code: `{
+      let a : String = "hello".to_string();
+      println!("{}", a);
+      println!("{}", a);
+      let b : String = a;
+    }`,
+    expectedOutput: [],
+  },
+
+  //   const chunk = `{
+  //   // Part 1: Basic ownership and mutation
+  //   let mut original: String = "hello".to_string();
+  //   println!("Original value: {}", original);
+
+  //   // Part 2: Mutable borrowing and dereferencing
+  //   let mut_ref: &mut String = &mut original;
+  //   *mut_ref = "modified".to_string();  // Modify through mutable reference
+  //   println!("After mutation through reference: {}", *mut_ref);
+  // }`;
+
+  // will fail bc lifetime not implemented
+  // const chunk = `{
+  //   // Part 1: Basic ownership and mutation
+  //   let mut original: String = "hello".to_string();
+  //   println!("Original value: {}", original);
+
+  //   // Part 2: Mutable borrowing and dereferencing
+  //   let mut_ref: &mut String = &mut original;
+  //   *mut_ref = "modified".to_string();  // Modify through mutable reference
+  //   println!("After mutation through reference: {}", *mut_ref);
+
+  //   // Part 3: Immutable borrowing after mutable borrow is done
+  //   // Now we can use original again or create new borrows
+  //   println!("Original value after modification: {}", original);
+
+  //   // Part 4: Multiple immutable borrows
+  //   let ref1: &String = &original;
+  //   let ref2: &String = &original;
+  //   println!("Immutable borrows: {}, {}", *ref1, *ref2);
+
+  //   // Part 5: Nested references and dereferencing
+  //   let nested_ref: &&String = &&original;
+  //   println!("Value through nested reference: {}", **nested_ref);
+
+  //   // Part 6: Mixed ownership patterns
+  //   let mut another: String = "another value".to_string();
+  //   let another_ref: &String = &another;
+  //   println!("Another value: {}", *another_ref);
+
+  //   // We can still read the original
+  //   println!("Original: {}, Another: {}", original, another);
+  // }`;
+
+  {
+    name: "✅ OK: multiple read-only borrows",
+    code: `{
+      let x : i64 = 42;
+      let r : & i64 = &x;
+      let r1 : & i64 = &x;
+      println!("x: {}, r: {}, r1: {}", x, r, r1);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "❌ ERROR: second mutable borrow while `r1` is still active",
+    code: `{
+      let mut s : String = "hello".to_string();
+      let r1 : &mut String = &mut s;
+      let r2 : &mut String = &mut s;
+      *r1 = "world".to_string();
+      *r2 = "world".to_string();
+      println!("{}", s);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "2 mutable borrows in same scopes should pass",
+    code: `{
+    let mut s : i64 = 5;
+    {
+        let mut r1 : &mut i64 = &mut s;
+        let mut g1 : &mut i64 = &mut s;
+    }
+    println!("{}", s);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "2 mutable borrows in seperate scopes should pass",
+    code: `{
+    let mut s : i64 = 5;
+    {
+        let mut r1 : &mut i64 = &mut s;
+    }{
+        let mut g1 : &mut i64 = &mut s;
+    }
+    println!("{}", s);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "Reading from moved reference type should fail, DIFF BEHAVIOUR FROM ACTUAL RUST",
+    code: `{
+      let mut s : i64 = 5;
+      let mut t : i64 = 10;
+      {
+          let mut r1 : &mut i64 = &mut s;
+          let mut g1 : &mut i64 = &mut t;
+
+          g1 = r1;
+          r1;
+      }
+      println!("{}", s);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "OK: transitive borrowing allowed",
+    code: `{
+      let x: i64 = 10;
+      let r1: &i64 = &x;
+      let r2: &&i64 = &r1;
+      println!("r2: {}", **r2);
+    }`,
+    expectedOutput: [],
+  },
+  {
+    name: "❌ `x` is already mutably borrowed by `r1`",
+    code: `{
+      let mut x: i64 = 42;
+      let r1: &mut i64 = &mut x;
+      let r2: &&&mut i64 = &&&mut x;
+      println!("{}", r1);
+    }`,
+    expectedOutput: [],
+  },
+
+  // const chunk = `{
+  //   let mut x: i64 = 5;
+
+  //   {
+  //       let r1: &mut i64 = &mut x;
+  //       *r1 = *r1 + 1;
+  //   }
+
+  //   let r2: &&mut i64 = &&mut x;
+  //   **r2 = **r2 + 2;
+
+  //   println!("{}", x); // prints 8
+  // }`;
+
+  // const chunk = `{
+  //   fn print_value(x: &i64) {
+  //     println!("Value: {}", x);
+  //   }
+  //   let a: i64 = 10;
+  //   print_value(&a);
+  //   println!("Still accessible: {}", a);
+  // }`;
+
+  // const chunk = `{
+  //   fn modify(x: &mut i64) {
+  //     *x = *x + 1;
+  //   }
+  //   let mut a: i64 = 10;
+  //   modify(&mut a);
+  //   modify(&mut a);
+  // }`;
+
+  // ❌ second mutable borrow while `r1` is still alive
+  // const chunk = `{
+  //   fn double_mut(x: &mut i64) {
+  //     let r1: &mut i64 = x;
+  //     let r2: &mut i64 = x;
+
+  //     *r1 = *r1 + 1;
+  //     *r2 = *r2 + 2;
+  //   }
+  //   let mut num: i64 = 10;
+  //   double_mut(&mut num);
+  // }`;
+
+  // ❌ Error: use after move
+  // const chunk = `{
+  //   fn take(x: String) {
+  //     println!("{}", x);
+  //   }
+  //   let a: String = "hello".to_string();
+  //   take(a);
+  //   println!("{}", a);
+  // }`;
+
+  // const chunk = `{
+  //   let mut value: i64 = 10;
+  //   let mut r1: &mut i64 = &mut value;
+  //   let r2: &mut &mut i64 = &mut r1;
+
+  //   **r2 = **r2 + 5;
+
+  //   println!("{}", value); // 15
+  // }`;
+
+  // reassigning borrow to same variable should work
+  // const chunk = `{
+  //     let mut x: i64 = 10;
+  //     let mut y: i64 = 10;
+  //     let mut r: &mut i64 = &mut x;
+  //     r = &mut x;
+  //     println!("{}", x);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 10;
+  //   let mut r: &mut i64 = &mut x;
+  //   let mut r1: &mut i64 = r;
+  //   println!("{}", r);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 0;
+  //   let r: &mut i64 = &mut x;
+  //   while (*r < 5) {
+  //       *r = 1;
+  //   }
+  //   println!("{}", x);
+  // }`;
+
+  // const chunk = `{
+  //   let mut x: i64 = 0;
+
+  //   while (x < 5) {
+  //       {
+  //           let r: &mut i64 = &mut x;
+  //           *r = 6;
+  //           println!("r = {}", r);
+  //       }
+
+  //       println!("x = {}", x);
+  //   }
+  // }`;
+
+  // const chunk = `{
+  //     let mut s: String = "hello".to_string();
+
+  //     if (true) {
+  //         let r: &mut String = &mut s;
+  //         println!("{}", r);
+  //     }
+
+  //     println!("{}", s);
+  // }`;
+
+  // const chunk = `{
+  //   let s: String = "hello".to_string();
+
+  //   if (false) {
+  //       let r: &mut String = &mut s;
+  //       println!("{}", s);
+  //   }
+
+  //   println!("{}", s);
+  // }`;
+
+  // ❌ Error: cannot use `s` because it is mutably borrowed
+  // const chunk = `{
+  //   let mut s: String = "start".to_string();
+  //   let mut t: String = "bye".to_string();
+  //   let mut count: i64 = 0;
+
+  //   // declare the mutable reference outside the loop
+  //   let mut r: &mut String = &mut t;
+
+  //   while (count < 3) {
+  //       // create a mutable borrow
+  //       r = &mut s;
+  //       // try to use s again while it's still borrowed
+  //       println!("Value of s: {}", s);
+  //       count += 1;
+  //   }
+  // }`;
+
+  // const chunk = `{
+  //   let mut s: String = "start".to_string();
+  //   let mut count: i64 = 0;
+
+  //   while (count < 3) {
+  //       {
+  //           let r: &mut String = &mut s;
+  //           println!("Modified: {}", r);
+  //       }
+  //       // borrow ends here
+
+  //       // ✅ now allowed
+  //       println!("Safe to use s: {}", s);
+  //       count += 1;
+  //   }
+  // }`;
+
+  // copy deref allowed
+  // const chunk = `{
+  //   let x: i64 = 42;
+  //   let r: &i64 = &x;
+  //   let val: i64 = *r;
+  //   let val1: i64 = *r;
+  //   println!("{}", x);
+  //   println!("{}", val);
+  //   println!("{}", val1);
+  // }`;
+
+  // cannot borrow `r` as mutable, as it is not declared as mutable
+  // const chunk = `{
+  //   let mut x: i64 = 42;
+  //   let r: &mut i64 = &mut x;
+  //   let s: &mut &mut i64 = &mut r;
+  //   *r = 10;
+  // }`;
 ];
