@@ -66,16 +66,21 @@ async function main() {
   log("===============================");
 
   // Run all tests and get results (assuming runTests uses TestConductor internally)
-  const { passed, failed, failedTests } = await runTests(testCases);
+  const { passed, failed, failedTests, failedDetails } = await runTests(
+    testCases
+  );
 
   log("\n===============================");
   log(`Test summary: ${passed} passed, ${failed} failed`);
 
-  // Print list of failed tests
+  // Print list of failed tests with expected and actual outputs
   if (failed > 0) {
     log("\nFailed tests:");
     failedTests.forEach((testName, index) => {
+      const { expected, actual } = failedDetails[testName]; // Retrieve details for the failed test
       log(`${index + 1}. ${testName}`);
+      log(`   Expected: ${JSON.stringify(expected)}`);
+      log(`   Actual:   ${JSON.stringify(actual)}`);
     });
     process.exit(1); // Exit with error code if tests fail
   }

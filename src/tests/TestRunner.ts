@@ -64,7 +64,11 @@ export class TestConductor implements IRunnerPlugin {
 /**
  * Runs a single test case
  */
-export async function runTest(test: TestCase): Promise<boolean> {
+export async function runTest(test: TestCase): Promise<{
+  success: boolean;
+  expected?: string[];
+  actual?: string[];
+}> {
   console.log(`\n----- Running test: ${test.name} -----`);
 
   const conductor = new TestConductor();
@@ -85,7 +89,11 @@ export async function runTest(test: TestCase): Promise<boolean> {
     );
     console.log(`Expected: ${test.expectedOutput}`);
     console.log(`Actual: ${conductor.outputs}`);
-    return fail();
+    return {
+      success: false,
+      expected: test.expectedOutput,
+      actual: conductor.outputs,
+    };
   }
 
   // Check outputs in order with exact matching
@@ -94,11 +102,16 @@ export async function runTest(test: TestCase): Promise<boolean> {
       console.log(`❌ Output at position ${i} doesn't match:`);
       console.log(`Expected: "${test.expectedOutput[i]}"`);
       console.log(`Actual: "${conductor.outputs[i]}"`);
-      return fail();
+      return {
+        success: false,
+        expected: test.expectedOutput,
+        actual: conductor.outputs,
+      };
     }
   }
 
-  return pass();
+  console.log(`✅ Test passed!`);
+  return { success: true };
 }
 
 function fail() {
@@ -118,19 +131,31 @@ export async function runTests(tests: TestCase[]): Promise<{
   passed: number;
   failed: number;
   failedTests: string[];
+  failedDetails: {
+    [testName: string]: { expected: string[]; actual: string[] };
+  };
 }> {
   let passed = 0;
   let failed = 0;
   const failedTests: string[] = [];
+  const failedDetails: {
+    [testName: string]: { expected: string[]; actual: string[] };
+  } = {};
 
   for (const test of tests) {
     try {
-      const success = await runTest(test);
-      if (success) {
+      const result = await runTest(test);
+      if (result.success) {
         passed++;
       } else {
         failed++;
         failedTests.push(test.name);
+        if (result.expected && result.actual) {
+          failedDetails[test.name] = {
+            expected: result.expected,
+            actual: result.actual,
+          };
+        }
       }
     } catch (error) {
       console.error(`Error running test ${test.name}:`, error);
@@ -139,5 +164,5 @@ export async function runTests(tests: TestCase[]): Promise<{
     }
   }
 
-  return { passed, failed, failedTests };
+  return { passed, failed, failedTests, failedDetails };
 }

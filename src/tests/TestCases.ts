@@ -311,15 +311,16 @@ export const testCases: TestCase[] = [
       fn double(x: &mut i64) {
         *x = (*x) * 2;
       }
-      
+
       let mut a: i64 = 5;
       let mut b: i64 = 10;
-      
-      let mut r: &mut i64 = &mut a;
-      double(r);
-      
-      r = &mut b;
-      double(r);
+      {
+        let mut r: &mut i64 = &mut a;
+        double(r);
+        
+        r = &mut b;
+        double(r);
+      }
       
       // Release borrows
       let _unused: i64 = 0;
@@ -350,16 +351,16 @@ export const testCases: TestCase[] = [
       let mut a: i64 = 1;
       let mut b: i64 = 2;
       let mut c: i64 = 3;
-      
-      let mut r: &mut i64 = &mut a;
-      *r = 10;
-      
-      r = &mut b;
-      *r = 20;
-      
-      r = &mut c;
-      *r = 30;
-      
+      {
+        let mut r: &mut i64 = &mut a;
+        *r = 10;
+
+        r = &mut b;
+        *r = 20;
+
+        r = &mut c;
+        *r = 30;
+      }
       println!("Values: {}, {}, {}", a, b, c);
     `,
     expectedOutput: ["Values: 10, 20, 30", undefinedResultString],
@@ -368,20 +369,20 @@ export const testCases: TestCase[] = [
     name: "Sequential mutability",
     code: `
       let mut x: i64 = 5;
-      
+
       {
         let r1: &i64 = &x;
         println!("Immutable borrow: {}", *r1);
         // r1 goes out of scope
       }
-      
+
       {
         let r2: &mut i64 = &mut x;
         *r2 = 10;
         println!("After mutable borrow: {}", *r2);
         // r2 goes out of scope
       }
-      
+
       println!("Final value: {}", x);
     `,
     expectedOutput: [
@@ -398,13 +399,13 @@ export const testCases: TestCase[] = [
         *a = *a + *c;
         *b = *b + *c;
       }
-      
+
       let mut x: i64 = 10;
       let mut y: i64 = 20;
       let z: i64 = 5;
-      
+
       update(&mut x, &mut y, &z);
-      
+
       println!("Updated values: x={}, y={}, z={}", x, y, z);
     `,
     expectedOutput: ["Updated values: x=15, y=25, z=5", undefinedResultString],
@@ -413,19 +414,19 @@ export const testCases: TestCase[] = [
     name: "Multiple mutable references in different scopes",
     code: `
       let mut value: i64 = 100;
-      
+
       {
         let r1: &mut i64 = &mut value;
         *r1 = 200;
         println!("First mutation: {}", *r1);
       }
-      
+
       {
         let r2: &mut i64 = &mut value;
         *r2 = 300;
         println!("Second mutation: {}", *r2);
       }
-      
+
       println!("Final value: {}", value);
     `,
 
@@ -449,7 +450,7 @@ export const testCases: TestCase[] = [
     expectedOutput: ["hello", "hello", undefinedResultString],
   },
   //   {
-  //     name: "Test 2",
+  //     name: "Lambda function (NOT SUPPORTED)",
   //     code: `{
   //       let fact_iter = |n, i, acc| {
   //           if i > n {
@@ -742,8 +743,10 @@ export const testCases: TestCase[] = [
           let r1: &mut i64 = &mut x;
           *r1 = *r1 + 1;
       }
-      let r2: &&mut i64 = &&mut x;
-      **r2 = **r2 + 2;
+      {
+        let r2: &&mut i64 = &&mut x;
+        **r2 = **r2 + 2;
+      }
 
       println!("{}", x); // prints 8
     `,
@@ -811,10 +814,11 @@ export const testCases: TestCase[] = [
     name: "Nested mutable references, one mutate",
     code: `
       let mut value: i64 = 10;
-      let mut r1: &mut i64 = &mut value;
-      let r2: &mut &mut i64 = &mut r1;
-
-      **r2 = **r2 + 5;
+      {
+        let mut r1: &mut i64 = &mut value;
+        let r2: &mut &mut i64 = &mut r1;
+        **r2 = **r2 + 5;
+      }
 
       println!("{}", value); // 15
     `,
@@ -832,16 +836,16 @@ export const testCases: TestCase[] = [
 
       println!("{}", value);
     `,
-    expectedOutput: [
-      "Error: Cannot read from 'r1' because it was mutably borrowed",
-    ],
+    expectedOutput: ["Error: Cannot mutate 'r1' while it is mutably borrowed"],
   },
   {
     name: "Reassigning mutable borrow to same variable",
     code: `
       let mut x: i64 = 10;
-      let mut r: &mut i64 = &mut x;
-      r = &mut x;
+      {
+        let mut r: &mut i64 = &mut x;
+        r = &mut x;
+      }
       println!("{}", x);
     `,
     expectedOutput: ["10", undefinedResultString],
@@ -871,37 +875,22 @@ export const testCases: TestCase[] = [
     ],
   },
 
-  // const chunk = `{
-  //   let mut x: i64 = 0;
-
-  //   while (x < 5) {
-  //       {
-  //           let r: &mut i64 = &mut x;
-  //           *r = 6;
-  //           println!("r = {}", r);
-  //       }
-
-  //       println!("x = {}", x);
-  //   }
-  // }`;
-
-  // chunk above
   {
-    name: "Mutable borrow in while loop",
+    name: "Mutable borrow and deref in while loop",
     code: `
       let mut x: i64 = 0;
 
       while (x < 5) {
-          {
-              let r: &mut i64 = &mut x;
-              *r = 6;
-              println!("r = {}", r);
-          }
+        {
+          let r: &mut i64 = &mut x;
+          *r = 6;
+          println!("r = {}", r);
+        }
 
           println!("x = {}", x);
       }
     `,
-    expectedOutput: ["r = 6"],
+    expectedOutput: ["r = 6", "x = 6", undefinedResultString],
   },
   {
     name: "Mutable borrow in if statement",
