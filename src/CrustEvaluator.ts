@@ -49,8 +49,8 @@ export class CrustEvaluator extends BasicEvaluator {
       const result = run(instrs, this.conductor);
 
       // const result = this.visitor.visit(tree);
-      console.log(`Result: ${result}`);
-      //   this.conductor.sendOutput(`Result: ${result}`);
+      //   console.log(`Result: ${result}`);
+      this.conductor.sendOutput(`Result: ${result}`);
     } catch (error) {
       this.conductor.sendOutput(
         `Error: ${error instanceof Error ? error.message : String(error)}`
