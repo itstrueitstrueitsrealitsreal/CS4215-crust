@@ -23,6 +23,9 @@ export class CrustEvaluator extends BasicEvaluator {
   }
 
   async evaluateChunk(chunk: string): Promise<void> {
+    // wrap chunk in block {}
+    chunk = `{ ${chunk} }`;
+
     try {
       //   this.conductor.sendOutput(`Evaluating chunk: ${chunk}`);
       const inputStream = CharStream.fromString(chunk);

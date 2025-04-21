@@ -131,7 +131,7 @@ export class CrustEvaluatorVisitor
     // Just compile the contained expression.
     this.visit(ctx.expression());
     // Pop the result since it's not being used
-    this.instrs[this.wc++] = { tag: "POP" };
+    // this.instrs[this.wc++] = { tag: "POP" };
   }
 
   /* ************************

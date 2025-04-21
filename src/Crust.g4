@@ -41,7 +41,7 @@ breakStmt: 'break' ';';
 ifStmt: 'if' '(' expression ')' statement ('else' statement)?;
 whileStmt: 'while' '(' expression ')' statement;
 // A block is a sequence of statements enclosed in braces.
-blockStmt: '{' statement* '}'; // have not implemented scope yet
+blockStmt: '{' statement* '}';
 
 // Macros: print!: prints without a newline.
 printStmt: 'print!' '(' STRING (',' expression)* ')' ';';
